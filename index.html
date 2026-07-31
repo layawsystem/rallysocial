@@ -570,7 +570,28 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 }
 /* ═════════════════════ END LAYAW MOTION ═════════════════════ */
 
-</style> <style>/* LAYAW-NATIVE-CONTROLS */:root{color-scheme:dark}select option,select optgroup{background:#16161B;color:#EAE6DE}</style></head> <body> <div id="iabBanner" style="display:none;position:sticky;top:0;z-index:60;background:#0B97A6;color:#fff;padding:12px 16px;font-size:13.5px;line-height:1.5;text-align:center;font-weight:600">For the best experience, open this page in your browser: tap the <strong>&#8942;</strong> or <strong>&hellip;</strong> menu, then choose <strong>&ldquo;Open in browser&rdquo;</strong> (Chrome or Safari).<button id="iabClose" style="margin-left:10px;background:rgba(255,255,255,.25);border:none;color:#fff;border-radius:6px;padding:3px 9px;font-weight:700;cursor:pointer">Got it</button></div> <div class="wrap"> <div class="brand"> <img id="logo" alt="" style="display:none"/> <div>
+</style> <style>/* LAYAW-NATIVE-CONTROLS */:root{color-scheme:dark}select option,select optgroup{background:#16161B;color:#EAE6DE}</style><style>/* ── LAYAW AMBIENT MOTION v1 ─────────────────────────────────────────
+   The two brand glows were painted straight onto <body> and sat still, which
+   is what made the page read as flat. They move to their own fixed layers so
+   they can be animated with transform/opacity only — GPU-composited, no
+   repaint, no layout. Base colour moves to <html> so z-index:-1 sits above it.
+
+   Slow drift, not a pulse: players stare at this page for 1-3 minutes while
+   picking slots, and anything that throbs starts reading as a notification.
+   ~2px/second — invisible frame to frame, clearly different after 30s.
+   The two layers run on 54s and 71s so they never fall into sync.
+
+   Delete this whole block to remove the effect. Nothing else depends on it.
+   ──────────────────────────────────────────────────────────────────── */
+html{background:#070708}
+body{background:transparent!important}
+body::before,body::after{content:"";position:fixed;inset:-18%;pointer-events:none;z-index:-1;will-change:transform,opacity}
+body::before{background:radial-gradient(1150px 640px at 86% 12%,var(--acc-12),transparent 60%);animation:layawDriftA 54s ease-in-out infinite alternate}
+body::after{background:radial-gradient(880px 540px at 8% 90%,var(--acc-08),transparent 58%);animation:layawDriftB 71s ease-in-out infinite alternate}
+@keyframes layawDriftA{0%{transform:translate3d(0,0,0) scale(1);opacity:.82}50%{transform:translate3d(-3.5%,2.6%,0) scale(1.07);opacity:1}100%{transform:translate3d(2.6%,-2%,0) scale(1.02);opacity:.9}}
+@keyframes layawDriftB{0%{transform:translate3d(0,0,0) scale(1.05);opacity:.88}50%{transform:translate3d(3%,-3%,0) scale(1);opacity:1}100%{transform:translate3d(-2.2%,2.6%,0) scale(1.06);opacity:.84}}
+@media (prefers-reduced-motion:reduce){body::before,body::after{animation:none;opacity:.9}}
+</style></head> <body> <div id="iabBanner" style="display:none;position:sticky;top:0;z-index:60;background:#0B97A6;color:#fff;padding:12px 16px;font-size:13.5px;line-height:1.5;text-align:center;font-weight:600">For the best experience, open this page in your browser: tap the <strong>&#8942;</strong> or <strong>&hellip;</strong> menu, then choose <strong>&ldquo;Open in browser&rdquo;</strong> (Chrome or Safari).<button id="iabClose" style="margin-left:10px;background:rgba(255,255,255,.25);border:none;color:#fff;border-radius:6px;padding:3px 9px;font-weight:700;cursor:pointer">Got it</button></div> <div class="wrap"> <div class="brand"> <img id="logo" alt="" style="display:none"/> <div>
 <div class="eyebrow" id="bizEyebrow">Pickleball</div>
 <h1 id="bizName">Loading…</h1>
 </div> </div> <p class="subline" id="bizTagline">
@@ -674,7 +695,7 @@ let db;try{const e=firebase.initializeApp(firebaseConfig);try{
 APPCHECK_SITE_KEY&&0!==APPCHECK_SITE_KEY.indexOf("PASTE_")&&firebase.appCheck(e).activate(APPCHECK_SITE_KEY,!0)
 }catch(e){console.warn("AppCheck:",e)}db=firebase.firestore();try{db.enablePersistence({synchronizeTabs:!0}).catch(function(){})}catch(e){}}catch(e){
 showError("Could not connect. Check the Firebase config at the top of this file.")}
-let viewYear,viewMonth,SETTINGS=null,COURTS=[],RATES=[],PROMOS=[],appliedPromo=null,selectedDate=null,cart=new Set,bookedSet=new Set,pendingSet=new Set,availUnsub=null,chosenPayment=null,receiptData=null,holdTimer=null,holdDeadline=0,reservedIds=[],reservedLockIds=[],reservedBookingId=null,reserving=!1
+let viewYear,viewMonth,SETTINGS=null,COURTS=[],RATES=[],PROMOS=[],appliedPromo=null,selectedDate=null,cart=new Set,bookedSet=new Set,pendingSet=new Set,availUnsub=null,chosenPayment=null,receiptData=null,holdTimer=null,holdDeadline=0,reservedIds=[],reservedLockIds=[],reservedBookingId=null,releasingBookingId=null,reserving=!1
 /* ── EASY-EDIT SETTING ── minutes of grace before a time slot is marked "Past".
    A slot stays open for this many minutes AFTER its start time, then turns Past.
    Example at 15: the 8:00–9:00 slot stays Open until 8:15, then shows Past at 8:16. */
@@ -776,7 +797,7 @@ function watchAvailability(){db&&(availUnsub&&(availUnsub(),availUnsub=null),
 availUnsub=db.collection("bookings").where("date","==",selectedDate).onSnapshot(e=>{bookedSet=new Set,
 pendingSet=new Set;const now=Date.now();e.forEach(e=>{const t=e.data();if("cancelled"===t.status)return
 ;if("reserved"===t.status){const hu=t.holdUntil&&t.holdUntil.toMillis?t.holdUntil.toMillis():0
-;if(!hu||hu<now)return;if(reservedBookingId&&t.bookingId===reservedBookingId)return
+;if(!hu||hu<now)return;if(t.bookingId&&(t.bookingId===reservedBookingId||t.bookingId===releasingBookingId))return
 ;(t.slots||[]).forEach(e=>pendingSet.add(t.court+"|"+e));return}
 ;const o="confirmed"===t.status?bookedSet:pendingSet;(t.slots||[]).forEach(e=>o.add(t.court+"|"+e))}),renderGrid()
 },e=>console.error(e)))}function renderGrid(){const e=$("gridBody");e.innerHTML=""
@@ -868,14 +889,14 @@ status:"reserved",holdUntil:hu,createdAt:firebase.firestore.FieldValue.serverTim
 })}
 /* Release the current reservation: delete reserved booking docs AND their slot locks. */
 async function releaseReservation(){const bid=reservedBookingId,lockIds=reservedLockIds.slice()
-;reservedIds=[];reservedLockIds=[];reservedBookingId=null
+;releasingBookingId=bid;reservedIds=[];reservedLockIds=[];reservedBookingId=null
 ;try{const b=db.batch();let any=!1
 /* Delete by querying our own reserved docs (robust even if in-memory IDs were lost). */
 ;if(bid){const snap=await db.collection("bookings").where("bookingId","==",bid).get()
 ;snap.forEach(doc=>{if("reserved"===String(doc.data().status).toLowerCase()){b.delete(doc.ref);any=!0}})}
 ;lockIds.forEach(id=>{b.delete(db.collection("slotLocks").doc(id));any=!0})
 ;if(any)await b.commit()}
-catch(e){console.warn("release failed",e)}}function paymentOptions(){const e=[{key:"GCash",label:"GCash",
+catch(e){console.warn("release failed",e)}finally{releasingBookingId=null;try{renderGrid()}catch(e){}}}function paymentOptions(){const e=[{key:"GCash",label:"GCash",
 name:SETTINGS.gcashName,number:SETTINGS.gcashNumber,qr:SETTINGS.gcashQrUrl},{key:"Maya",label:"Maya",
 name:SETTINGS.mayaName,number:SETTINGS.mayaNumber,qr:SETTINGS.mayaQrUrl},{key:"Bank",label:"Bank Transfer",
 name:SETTINGS.bankName,number:SETTINGS.bankNumber,qr:SETTINGS.bankQrUrl
@@ -916,7 +937,7 @@ $("emailInput").value="",appliedPromo=null,$("voucherInput")&&($("voucherInput")
 $("receiptPreview").style.display="none";const e=$("uploadBox").querySelector(".big")
 ;e&&(e.textContent="☁️ Tap to upload image"),renderGrid(),updateSummary(),renderCalendar(),window.scrollTo({top:0,
 behavior:"smooth"})},$("continueBtn").onclick=goCheckout,$("mbContinue").onclick=goCheckout,
-$("backToSlots").onclick=async()=>{clearHoldTimer();await releaseReservation();$("checkoutView").style.display="none",$("app").style.display="block",
+window.addEventListener("pagehide",function(){if(reservedBookingId)releaseReservation()});$("backToSlots").onclick=async()=>{clearHoldTimer();await releaseReservation();$("checkoutView").style.display="none",$("app").style.display="block",
 window.innerWidth<=1e3&&($("mobileBar").style.display="flex")},$("uploadBox").onclick=()=>$("receiptInput").click(),
 $("receiptInput").onchange=e=>{const t=e.target.files[0];if(!t)return
 ;if(t.size>5242880)return void toast("Image too large (max 5MB).");const o=new FileReader;o.onload=e=>{const t=new Image
