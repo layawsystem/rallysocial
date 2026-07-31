@@ -22,7 +22,7 @@ name:"Rally Social",
 sport:"Pickleball",
 email:"hello@rallysocial.net",
 address:"Rally Social Sports Center, 2nd Floor, CityMall Dau, Dau Access Rd, Dau, Mabalacat, Pampanga 2010",
-siteUrl:"https://booking.rallysocial.net",
+siteUrl:"https://layawsystem.github.io/rallysocial",
 docsUpdated:"July 28, 2026"
 };
 </script>
@@ -37,8 +37,8 @@ docsUpdated:"July 28, 2026"
                        :root, so every highlight in the glass theme follows the
                        client's accent instead of a hardcoded colour. */
 function txOn(h){h=String(h||"").replace("#","");if(3===h.length)h=h.split("").map(function(c){return c+c}).join("");if(6!==h.length)return"#FFFFFF";var n=parseInt(h,16);function f(c){c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)}var L=.2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(255&n);return L>.205?"#231803":"#FFFFFF"}
-function accVars(el,h){h=String(h||"").replace("#","");if(3===h.length)h=h.split("").map(function(c){return c+c}).join("");if(6!==h.length||!el)return;var n=parseInt(h,16),r=n>>16&255,g=n>>8&255,b=255&n;function a(v){return"rgba("+r+","+g+","+b+","+v+")"}function mix(w){return"rgb("+Math.round(r+(255-r)*w)+","+Math.round(g+(255-g)*w)+","+Math.round(b+(255-b)*w)+")"}el.setProperty("--acc-05",a(.05));el.setProperty("--acc-08",a(.08));el.setProperty("--acc-12",a(.12));el.setProperty("--acc-22",a(.22));el.setProperty("--acc-40",a(.4));el.setProperty("--acc-55",a(.55));el.setProperty("--acc-lite",mix(.45));el.setProperty("--acc-tint",mix(.62));el.setProperty("--link",mix(.1))}</script>
-<script>document.title=CLIENT.name+" — Admin";</script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script> <link rel="preconnect" href="https://fonts.googleapis.com"/> <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/> <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/> <style>:root{--navy:#0D2863;--navy-d:#0A1E4C;--green:#0D2863;--green-d:#0A1E4C;--pos:#2747E8;--btn-bd:#24407F;--bg:#0B1220;--card:#191c25;--elev:#1B2740;--line:#273248;--text:#F1F5F9;--text-2:#C3CEDD;--muted:#8A99AD;--brand-l:#9DBBF5;--link:#7FA7F0;--input-bg:#0E1626;--input-line:#2E3B52;--open-bg:#15321F;--open-tx:#48A768;--pend-bg:#3E3212;--pend-tx:#E0B93E;--conf-bg:#15321F;--conf-tx:#48A768;--ok-bg:#15321F;--ok-tx:#48A768;--cancel:#E88A92;--radius:16px;--shadow:0 12px 30px rgba(0,0,0,.45)}input,select,textarea,.note-input{color:var(--text)}input::placeholder,textarea::placeholder,.note-input::placeholder{color:var(--muted)}input[type=color]{color:var(--text)}
+function accVars(el,h){h=String(h||"").replace("#","");if(3===h.length)h=h.split("").map(function(c){return c+c}).join("");if(6!==h.length||!el)return;var n=parseInt(h,16),r=n>>16&255,g=n>>8&255,b=255&n;function a(v){return"rgba("+r+","+g+","+b+","+v+")"}function mix(w){return"rgb("+Math.round(r+(255-r)*w)+","+Math.round(g+(255-g)*w)+","+Math.round(b+(255-b)*w)+")"}function dk(t){return"rgb("+Math.round(r*t)+","+Math.round(g*t)+","+Math.round(b*t)+")"}el.setProperty("--acc-05",a(.05));el.setProperty("--acc-08",a(.08));el.setProperty("--acc-12",a(.12));el.setProperty("--acc-22",a(.22));el.setProperty("--acc-40",a(.4));el.setProperty("--acc-55",a(.55));el.setProperty("--acc-lite",mix(.45));el.setProperty("--acc-tint",mix(.62));el.setProperty("--link",mix(.1));el.setProperty("--brand-l",mix(.35));el.setProperty("--chart","#"+h);el.setProperty("--chart-d",dk(.72));el.setProperty("--chart-l",mix(.45));el.setProperty("--pos","#"+h);el.setProperty("--btn-bd",a(.45));el.setProperty("--input-focus",a(.55));el.setProperty("--sel-bd",a(.55))}</script>
+<script>document.title=CLIENT.name+" — Admin";</script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script> <link rel="preconnect" href="https://fonts.googleapis.com"/> <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/> <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/> <style>:root{--navy:#242428;--navy-d:#17171A;--green:#242428;--green-d:#17171A;--pos:#6B7280;--btn-bd:#3A3A42;--bg:#101013;--card:#191c25;--elev:#1C1C21;--line:#2B2B32;--text:#F1F5F9;--text-2:#CACAD1;--muted:#8E8E97;--brand-l:#B9B9C1;--link:#B9B9C1;--input-bg:#141418;--input-line:#33333C;--open-bg:#15321F;--open-tx:#48A768;--pend-bg:#3E3212;--pend-tx:#E0B93E;--conf-bg:#15321F;--conf-tx:#48A768;--ok-bg:#15321F;--ok-tx:#48A768;--cancel:#E88A92;--radius:16px;--shadow:0 12px 30px rgba(0,0,0,.45)}input,select,textarea,.note-input{color:var(--text)}input::placeholder,textarea::placeholder,.note-input::placeholder{color:var(--muted)}input[type=color]{color:var(--text)}
 *{box-sizing:border-box;margin:0;padding:0}
 body,html{max-width:100%;overflow-x:hidden}
 body{font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -117,7 +117,7 @@ input:focus{outline:2px solid var(--green);border-color:var(--green)}
 .badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em}
 .badge.pending{background:var(--pend-bg);color:var(--pend-tx)}
 .badge.confirmed{background:var(--ok-bg);color:var(--ok-tx)}
-.badge.cancelled{background:#232c3b;color:#8a99ad}
+.badge.cancelled{background:#26262C;color:#8E8E97}
 .booking .amt{margin-left:auto;font-weight:800;color:var(--text)}
 .booking .times{font-size:14px;margin-bottom:6px}
 .booking .who{font-size:13px;color:var(--muted)}
@@ -169,7 +169,7 @@ table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
 .wcell{border-radius:9px;padding:12px 4px;text-align:center;font-size:12px;font-weight:700}
 .wcell.open{background:var(--open-bg);color:var(--open-tx);cursor:pointer}
 .wcell.sel{background:var(--navy);color:#fff}
-.wcell.off{background:#232c3b;color:#8a99ad;cursor:not-allowed}
+.wcell.off{background:#26262C;color:#8E8E97;cursor:not-allowed}
 .pos{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px}
 .pos-row{display:flex;align-items:center;justify-content:space-between;font-size:15px}
 .pos-row strong{font-size:18px;color:var(--text)}
@@ -204,7 +204,7 @@ table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
 .mc-court.on{border-color:var(--green);background:rgba(255,255,255,.04)}
 .mc-court input{width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex:none}
 .cav-slot-actions{display:flex;gap:14px;margin-bottom:9px}
-.cav-linkbtn{background:none;border:none;color:var(--accent,#2747E8);font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
+.cav-linkbtn{background:none;border:none;color:var(--green,#242428);font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
 .cav-slot{padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:var(--elev);color:var(--text-2);font-size:12px;font-weight:700;cursor:pointer;user-select:none}
 .cav-slot.on{background:var(--green);color:#fff;border-color:var(--green)}
 .cav-slot.taken{opacity:.4;cursor:not-allowed;text-decoration:line-through}
@@ -214,7 +214,7 @@ table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
 .court-status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .court-card{border:1px solid var(--line);border-radius:13px;padding:14px;cursor:pointer;transition:border-color .15s,background .15s;position:relative}
 .court-card:hover{border-color:var(--teal,#0B97A6);background:rgba(255,255,255,.03)}
-.court-card .ci{width:34px;height:34px;border-radius:9px;background:var(--ok-bg);color:var(--pos,#2747E8);display:grid;place-items:center;margin-bottom:10px}
+.court-card .ci{width:34px;height:34px;border-radius:9px;background:var(--ok-bg);color:var(--pos,#6B7280);display:grid;place-items:center;margin-bottom:10px}
 .court-card .ci svg{width:18px;height:18px}
 .court-card .cn{font-weight:800;font-size:14px}
 .court-card .ct{font-size:12px;color:var(--muted);margin-bottom:10px}
@@ -307,9 +307,9 @@ table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
   --btn-dis-bg:rgba(255,255,255,.05);
 
   /* Pre-load brand fallbacks. Firestore overrides all four. */
-  --navy:#0D2863;  --navy-d:#0A1E4C;
-  --green:#0D2863; --green-d:#0A1E4C;
-  --sel-bg:#15336B;
+  --navy:#242428;  --navy-d:#17171A;
+  --green:#242428; --green-d:#17171A;
+  --sel-bg:#2B2B32;
   --btn-tx:#FFFFFF; --nav-tx:#FFFFFF; --sel-tx:#FFFFFF;
 }
 
@@ -678,10 +678,10 @@ function emailOf(t){return cinfo(t).email||t.email||""}async function loadBase()
 const t=await db.collection("settings").doc("config").get();if(t.exists){SETTINGS=t.data()
 ;const e=document.documentElement.style;SETTINGS.colorPrimary&&(e.setProperty("--navy",SETTINGS.colorPrimary),
 e.setProperty("--navy-d",SETTINGS.colorPrimaryDark||darken(SETTINGS.colorPrimary,.68))),
-e.setProperty("--green",SETTINGS.colorAccent||SETTINGS.colorPrimary||"#0D2863"),e.setProperty("--green-d",SETTINGS.colorAccentDark||SETTINGS.colorPrimaryDark||"#0A1E4C"),
-e.setProperty("--btn-tx",SETTINGS.colorAccentText||txOn(SETTINGS.colorAccent||SETTINGS.colorPrimary||"#0D2863")),
-e.setProperty("--nav-tx",SETTINGS.colorPrimaryText||txOn(SETTINGS.colorPrimary||"#0D2863")),
-accVars(e,SETTINGS.colorAccent||SETTINGS.colorPrimary||"#0D2863")
+e.setProperty("--green",SETTINGS.colorAccent||SETTINGS.colorPrimary||"#242428"),e.setProperty("--green-d",SETTINGS.colorAccentDark||SETTINGS.colorPrimaryDark||"#17171A"),
+e.setProperty("--btn-tx",SETTINGS.colorAccentText||txOn(SETTINGS.colorAccent||SETTINGS.colorPrimary||"#242428")),
+e.setProperty("--nav-tx",SETTINGS.colorPrimaryText||txOn(SETTINGS.colorPrimary||"#242428")),
+accVars(e,SETTINGS.colorAccent||SETTINGS.colorPrimary||"#242428")
 ;const n=SETTINGS.businessName||CLIENT.name||"Dashboard";$("loginBiz").textContent=n,$("topBiz").textContent=n,
 document.title=n+" — Admin",(function(){var _lu=SETTINGS.logoUrl||DEFAULT_LOGO;if(!_lu)return;[$("loginLogo"),$("topLogo")].forEach(function(t){if(!t)return;t.src=_lu;t.style.display="block"})})()}const e=await db.collection("courts").get();COURTS=[],e.forEach(t=>{const e=t.data()
 ;!1!==e.active&&COURTS.push({id:t.id,name:e.name||"Court",type:e.type||"",status:e.status||"",blocks:Array.isArray(e.blocks)?e.blocks:[]})}),COURTS.sort((t,e)=>t.name.localeCompare(e.name))}catch(t){
