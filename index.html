@@ -22,7 +22,7 @@ name:"Rally Social",
 sport:"Pickleball",
 email:"hello@rallysocial.net",
 address:"Rally Social Sports Center, 2nd Floor, CityMall Dau, Dau Access Rd, Dau, Mabalacat, Pampanga 2010",
-siteUrl:"https://booking.rallysocial.net",
+siteUrl:"https://layawsystem.github.io/rallysocial",
 docsUpdated:"July 28, 2026"
 };
 </script>
@@ -37,8 +37,8 @@ docsUpdated:"July 28, 2026"
                        :root, so every highlight in the glass theme follows the
                        client's accent instead of a hardcoded colour. */
 function txOn(h){h=String(h||"").replace("#","");if(3===h.length)h=h.split("").map(function(c){return c+c}).join("");if(6!==h.length)return"#FFFFFF";var n=parseInt(h,16);function f(c){c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)}var L=.2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(255&n);return L>.205?"#231803":"#FFFFFF"}
-function accVars(el,h){h=String(h||"").replace("#","");if(3===h.length)h=h.split("").map(function(c){return c+c}).join("");if(6!==h.length||!el)return;var n=parseInt(h,16),r=n>>16&255,g=n>>8&255,b=255&n;function a(v){return"rgba("+r+","+g+","+b+","+v+")"}function mix(w){return"rgb("+Math.round(r+(255-r)*w)+","+Math.round(g+(255-g)*w)+","+Math.round(b+(255-b)*w)+")"}el.setProperty("--acc-05",a(.05));el.setProperty("--acc-08",a(.08));el.setProperty("--acc-12",a(.12));el.setProperty("--acc-22",a(.22));el.setProperty("--acc-40",a(.4));el.setProperty("--acc-55",a(.55));el.setProperty("--acc-lite",mix(.45));el.setProperty("--acc-tint",mix(.62));el.setProperty("--link",mix(.1))}</script>
-<script>document.title=CLIENT.name+" — Book a Court";</script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script> <link rel="preconnect" href="https://fonts.googleapis.com"/> <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/> <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/> <style>:root{--navy:#0D2863;--navy-d:#0A1E4C;--green:#0D2863;--green-d:#0A1E4C;--btn-bd:#24407F;--bg:#0B1220;--card:#191c25;--elev:#1B2740;--line:#273248;--text:#F1F5F9;--text-2:#C3CEDD;--muted:#8A99AD;--disabled:#64748B;--brand-l:#9DBBF5;--link:#7FA7F0;--open-bg:#15321F;--open-tx:#48A768;--open-bd:#205E37;--sel-bg:#15336B;--sel-tx:#FFFFFF;--sel-bd:#3B5CA0;--book-bg:#3E1A20;--book-tx:#E88A92;--book-bd:#6E2A31;--pend-bg:#3E3212;--pend-tx:#E0B93E;--pend-bd:#8A6A1E;--past-bg:#232C3B;--past-tx:#7E8CA0;--past-bd:#333F52;--input-bg:#0E1626;--input-line:#2E3B52;--input-focus:#3B5CA0;--info-bg:#132445;--info-line:#25406E;--info-tx:#AFC3E6;--btn-dis-bg:#232E42;--cancel:#E88A92;--radius:16px;--shadow:0 12px 30px rgba(0,0,0,.45)}
+function accVars(el,h){h=String(h||"").replace("#","");if(3===h.length)h=h.split("").map(function(c){return c+c}).join("");if(6!==h.length||!el)return;var n=parseInt(h,16),r=n>>16&255,g=n>>8&255,b=255&n;function a(v){return"rgba("+r+","+g+","+b+","+v+")"}function mix(w){return"rgb("+Math.round(r+(255-r)*w)+","+Math.round(g+(255-g)*w)+","+Math.round(b+(255-b)*w)+")"}function dk(t){return"rgb("+Math.round(r*t)+","+Math.round(g*t)+","+Math.round(b*t)+")"}el.setProperty("--acc-05",a(.05));el.setProperty("--acc-08",a(.08));el.setProperty("--acc-12",a(.12));el.setProperty("--acc-22",a(.22));el.setProperty("--acc-40",a(.4));el.setProperty("--acc-55",a(.55));el.setProperty("--acc-lite",mix(.45));el.setProperty("--acc-tint",mix(.62));el.setProperty("--link",mix(.1));el.setProperty("--brand-l",mix(.35));el.setProperty("--chart","#"+h);el.setProperty("--chart-d",dk(.72));el.setProperty("--chart-l",mix(.45));el.setProperty("--pos","#"+h);el.setProperty("--btn-bd",a(.45));el.setProperty("--input-focus",a(.55));el.setProperty("--sel-bd",a(.55))}</script>
+<script>document.title=CLIENT.name+" — Book a Court";</script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script> <link rel="preconnect" href="https://fonts.googleapis.com"/> <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/> <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/> <style>:root{--navy:#242428;--navy-d:#17171A;--green:#242428;--green-d:#17171A;--btn-bd:#3A3A42;--bg:#101013;--card:#191c25;--elev:#1C1C21;--line:#2B2B32;--text:#F1F5F9;--text-2:#CACAD1;--muted:#8E8E97;--disabled:#6B6B73;--brand-l:#B9B9C1;--link:#B9B9C1;--open-bg:#15321F;--open-tx:#48A768;--open-bd:#205E37;--sel-bg:#2B2B32;--sel-tx:#FFFFFF;--sel-bd:#4A4A55;--book-bg:#3E1A20;--book-tx:#E88A92;--book-bd:#6E2A31;--pend-bg:#3E3212;--pend-tx:#E0B93E;--pend-bd:#8A6A1E;--past-bg:#26262C;--past-tx:#8E8E97;--past-bd:#333338;--input-bg:#141418;--input-line:#33333C;--input-focus:#4A4A55;--info-bg:#1A1A20;--info-line:#33333C;--info-tx:#C6C6CE;--btn-dis-bg:#26262C;--cancel:#E88A92;--radius:16px;--shadow:0 12px 30px rgba(0,0,0,.45)}
 *{box-sizing:border-box;margin:0;padding:0}
 body,html{max-width:100%;overflow-x:hidden}
 body{font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -301,9 +301,9 @@ table.slots .time-cell{position:sticky;left:0;background:var(--card);z-index:2}
   --btn-dis-bg:rgba(255,255,255,.05);
 
   /* Pre-load brand fallbacks. Firestore overrides all four. */
-  --navy:#0D2863;  --navy-d:#0A1E4C;
-  --green:#0D2863; --green-d:#0A1E4C;
-  --sel-bg:#15336B;
+  --navy:#242428;  --navy-d:#17171A;
+  --green:#242428; --green-d:#17171A;
+  --sel-bg:#2B2B32;
   --btn-tx:#FFFFFF; --nav-tx:#FFFFFF; --sel-tx:#FFFFFF;
 }
 
@@ -532,18 +532,18 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 }
 .rs-seal-mark{width:clamp(126px,13.5vmin,172px);height:clamp(126px,13.5vmin,172px);overflow:visible;will-change:transform}
 .rs-seal-ring{
-  fill:none;stroke:var(--green,#0D2863);stroke-width:3.5;stroke-linecap:round;
+  fill:none;stroke:var(--green,#242428);stroke-width:3.5;stroke-linecap:round;
   stroke-dasharray:289.03;stroke-dashoffset:289.03;
   transform:rotate(-90deg);transform-origin:60px 60px;
   animation:rsRing .62s .06s cubic-bezier(.25,.8,.30,1) both;
 }
 .rs-seal-check{
-  fill:none;stroke:var(--green,#0D2863);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;
+  fill:none;stroke:var(--green,#242428);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;
   stroke-dasharray:64;stroke-dashoffset:64;
   animation:rsCheck .34s .50s cubic-bezier(.30,.90,.40,1) both;
 }
 .rs-seal-glow{
-  fill:none;stroke:var(--green,#0D2863);stroke-width:1;opacity:0;
+  fill:none;stroke:var(--green,#242428);stroke-width:1;opacity:0;
   animation:rsGlow .85s .58s ease-out both;
 }
 @keyframes rsScrimIn{from{opacity:0}to{opacity:1}}
@@ -708,10 +708,10 @@ rate:Number(t.rate)})}),RATES.sort((e,t)=>e.start-t.start);PROMOS=[];if(pp)pp.fo
 viewMonth=o.getMonth(),selectedDate=dstr(o),renderCalendar(),renderGridHead(),watchAvailability(),watchCourtsLive(),updateSummary(),
 window.__clearLoadHint&&window.__clearLoadHint(),$("loading").style.display="none",$("app").style.display="block"}catch(e){console.error(e),
 showError("timeout"===e.message?"Couldn't connect. If you opened this from Messenger or Facebook, tap ••• and choose “Open in browser”, then try again.":"Failed to load data: "+(e.message||e))}}function applyTheme(){
-const e=document.documentElement.style,t=SETTINGS.colorPrimary||"#0D2863",o=SETTINGS.colorAccent||"#0D2863"
-;e.setProperty("--navy",t),e.setProperty("--navy-d",SETTINGS.colorPrimaryDark||"#0A1E4C"),e.setProperty("--green",o),
-e.setProperty("--green-d",SETTINGS.colorAccentDark||"#0A1E4C")
-;const sb=SETTINGS.slotSelectedBg||"#15336B";e.setProperty("--sel-bg",sb),
+const e=document.documentElement.style,t=SETTINGS.colorPrimary||"#242428",o=SETTINGS.colorAccent||"#242428"
+;e.setProperty("--navy",t),e.setProperty("--navy-d",SETTINGS.colorPrimaryDark||"#17171A"),e.setProperty("--green",o),
+e.setProperty("--green-d",SETTINGS.colorAccentDark||"#17171A")
+;const sb=SETTINGS.slotSelectedBg||"#2B2B32";e.setProperty("--sel-bg",sb),
 /* Readable text on brand-coloured surfaces + accent tints for the glass theme. */
 e.setProperty("--btn-tx",SETTINGS.colorAccentText||txOn(o)),
 e.setProperty("--nav-tx",SETTINGS.colorPrimaryText||txOn(t)),
