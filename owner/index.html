@@ -61,7 +61,7 @@ input:focus{outline:2px solid var(--green);border-color:var(--green)}
 .app{display:flex;min-height:100vh}
 .sidebar{width:248px;flex-shrink:0;background:linear-gradient(180deg,var(--sidebar),var(--sidebar-2));color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
 .side-brand{display:flex;align-items:center;gap:11px;padding:20px 18px 18px}
-.side-brand .logo{width:40px;height:40px;border-radius:11px;object-fit:cover;background:var(--green);display:grid;place-items:center;flex-shrink:0}
+.side-brand .logo{width:40px;height:40px;border-radius:11px;object-fit:contain;padding:4px;background:rgba(255,255,255,.10);display:grid;place-items:center;flex-shrink:0}
 .side-brand .logo svg{width:22px;height:22px}
 .side-brand .bn{font-size:15px;font-weight:800;line-height:1.1;letter-spacing:.01em}
 .side-brand .bs{font-size:9px;letter-spacing:.16em;text-transform:uppercase;opacity:.6;font-weight:700;margin-top:2px}
@@ -71,7 +71,7 @@ input:focus{outline:2px solid var(--green);border-color:var(--green)}
 .nav-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;cursor:pointer;color:rgba(255,255,255,.78);font-weight:600;font-size:14px;margin-bottom:2px;transition:background .14s,color .14s}
 .nav-item svg{width:19px;height:19px;flex-shrink:0;opacity:.9}
 .nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
-.nav-item.active{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(39,71,232,.35)}
+.nav-item.active{background:var(--green);color:#fff;box-shadow:0 6px 16px var(--acc-22)}
 .nav-item.active svg{opacity:1}
 .nav-item.locked{color:rgba(255,255,255,.5)}
 .nav-item .lock{margin-left:auto;width:14px;height:14px;opacity:.65}
@@ -613,7 +613,7 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
   .card,.modal,.modal-box,.modal-doc,.login-card,.notif,.stat,.kpi,.sidebar{background:#141416}
 }
 /* ════════════════════ END LAYAW GLASS THEME ════════════════════ */
-</style> </head> <body> <div id="loginView" class="login-wrap" style="display:none"> <div class="login-card"> <div class="brand">
+</style> <style>/* LAYAW-NATIVE-CONTROLS */:root{color-scheme:dark}select option,select optgroup{background:#16161B;color:#EAE6DE}</style></head> <body> <div id="loginView" class="login-wrap" style="display:none"> <div class="login-card"> <div class="brand">
 <img id="loginLogo" alt="" style="display:none"/>
 <div>
 <div class="eyebrow">Owner access</div>
