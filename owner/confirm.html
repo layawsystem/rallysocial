@@ -27,7 +27,7 @@ name:"Rally Social",
 sport:"Pickleball",
 email:"hello@rallysocial.net",
 address:"Rally Social Sports Center, 2nd Floor, CityMall Dau, Dau Access Rd, Dau, Mabalacat, Pampanga 2010",
-siteUrl:"https://booking.rallysocial.net",
+siteUrl:"https://layawsystem.github.io/rallysocial",
 docsUpdated:"July 28, 2026"
 };
 </script>
@@ -42,7 +42,7 @@ docsUpdated:"July 28, 2026"
                        :root, so every highlight in the glass theme follows the
                        client's accent instead of a hardcoded colour. */
 function txOn(h){h=String(h||"").replace("#","");if(3===h.length)h=h.split("").map(function(c){return c+c}).join("");if(6!==h.length)return"#FFFFFF";var n=parseInt(h,16);function f(c){c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)}var L=.2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(255&n);return L>.205?"#231803":"#FFFFFF"}
-function accVars(el,h){h=String(h||"").replace("#","");if(3===h.length)h=h.split("").map(function(c){return c+c}).join("");if(6!==h.length||!el)return;var n=parseInt(h,16),r=n>>16&255,g=n>>8&255,b=255&n;function a(v){return"rgba("+r+","+g+","+b+","+v+")"}function mix(w){return"rgb("+Math.round(r+(255-r)*w)+","+Math.round(g+(255-g)*w)+","+Math.round(b+(255-b)*w)+")"}el.setProperty("--acc-05",a(.05));el.setProperty("--acc-08",a(.08));el.setProperty("--acc-12",a(.12));el.setProperty("--acc-22",a(.22));el.setProperty("--acc-40",a(.4));el.setProperty("--acc-55",a(.55));el.setProperty("--acc-lite",mix(.45));el.setProperty("--acc-tint",mix(.62));el.setProperty("--link",mix(.1))}</script>
+function accVars(el,h){h=String(h||"").replace("#","");if(3===h.length)h=h.split("").map(function(c){return c+c}).join("");if(6!==h.length||!el)return;var n=parseInt(h,16),r=n>>16&255,g=n>>8&255,b=255&n;function a(v){return"rgba("+r+","+g+","+b+","+v+")"}function mix(w){return"rgb("+Math.round(r+(255-r)*w)+","+Math.round(g+(255-g)*w)+","+Math.round(b+(255-b)*w)+")"}function dk(t){return"rgb("+Math.round(r*t)+","+Math.round(g*t)+","+Math.round(b*t)+")"}el.setProperty("--acc-05",a(.05));el.setProperty("--acc-08",a(.08));el.setProperty("--acc-12",a(.12));el.setProperty("--acc-22",a(.22));el.setProperty("--acc-40",a(.4));el.setProperty("--acc-55",a(.55));el.setProperty("--acc-lite",mix(.45));el.setProperty("--acc-tint",mix(.62));el.setProperty("--link",mix(.1));el.setProperty("--brand-l",mix(.35));el.setProperty("--chart","#"+h);el.setProperty("--chart-d",dk(.72));el.setProperty("--chart-l",mix(.45));el.setProperty("--pos","#"+h);el.setProperty("--btn-bd",a(.45));el.setProperty("--input-focus",a(.55));el.setProperty("--sel-bd",a(.55))}</script>
 <script>document.title=CLIENT.name+" — Confirm Booking";</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
@@ -52,7 +52,7 @@ function accVars(el,h){h=String(h||"").replace("#","");if(3===h.length)h=h.split
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-:root{--navy:#04284D;--teal:#0B97A6;--ice:#9EC2CD;--bg:#0B1220;--card:#191c25;--elev:#1B2740;--line:#273248;--text:#F1F5F9;--text-2:#C3CEDD;--muted:#8A99AD;--ok-bg:#15321F;--ok-tx:#48A768;--pend-bg:#3E3212;--pend-tx:#E0B93E;--cancel-bg:#3E1A20;--cancel-tx:#E88A92;--radius:16px;--shadow:0 12px 30px rgba(0,0,0,.45)}
+:root{--navy:#242428;--teal:#0B97A6;--ice:#9EC2CD;--bg:#101013;--card:#191c25;--elev:#1C1C21;--line:#2B2B32;--text:#F1F5F9;--text-2:#CACAD1;--muted:#8E8E97;--ok-bg:#15321F;--ok-tx:#48A768;--pend-bg:#3E3212;--pend-tx:#E0B93E;--cancel-bg:#3E1A20;--cancel-tx:#E88A92;--radius:16px;--shadow:0 12px 30px rgba(0,0,0,.45)}
 input,select,textarea{color:var(--text)}input::placeholder{color:var(--muted)}
 *{box-sizing:border-box;margin:0;padding:0}
 body,html{max-width:100%;overflow-x:hidden}
@@ -158,9 +158,9 @@ body{font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI"
   --btn-dis-bg:rgba(255,255,255,.05);
 
   /* Pre-load brand fallbacks. Firestore overrides all four. */
-  --navy:#0D2863;  --navy-d:#0A1E4C;
-  --green:#0D2863; --green-d:#0A1E4C;
-  --sel-bg:#15336B;
+  --navy:#242428;  --navy-d:#17171A;
+  --green:#242428; --green-d:#17171A;
+  --sel-bg:#2B2B32;
   --btn-tx:#FFFFFF; --nav-tx:#FFFFFF; --sel-tx:#FFFFFF;
 }
 
@@ -438,7 +438,7 @@ async function loadBooking(){
     SETTINGS=cfg.exists?cfg.data():{};
     // Pick up the venue's brand colours so this page matches the rest.
     const st=document.documentElement.style,
-          pri=SETTINGS.colorPrimary||"#0D2863",
+          pri=SETTINGS.colorPrimary||"#242428",
           acc=SETTINGS.colorAccent||pri;
     st.setProperty("--navy",pri);
     st.setProperty("--navy-d",SETTINGS.colorPrimaryDark||pri);
