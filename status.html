@@ -321,7 +321,28 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
   .card,.modal,.modal-box,.modal-doc,.login-card,.notif,.stat,.kpi,.sidebar{background:#141416}
 }
 /* ════════════════════ END LAYAW GLASS THEME ════════════════════ */
-</style> <style>/* LAYAW-NATIVE-CONTROLS */:root{color-scheme:dark}select option,select optgroup{background:#16161B;color:#EAE6DE}</style></head> <body> <div class="wrap"> <div class="pagehead"> <a href="index.html" title="Back">‹</a> <h1>Booking Status</h1> </div> <div id="loading" class="loading">Loading your booking…</div> <div id="errorBox" class="error-box" style="display:none">
+</style> <style>/* LAYAW-NATIVE-CONTROLS */:root{color-scheme:dark}select option,select optgroup{background:#16161B;color:#EAE6DE}</style><style>/* ── LAYAW AMBIENT MOTION v1 ─────────────────────────────────────────
+   The two brand glows were painted straight onto <body> and sat still, which
+   is what made the page read as flat. They move to their own fixed layers so
+   they can be animated with transform/opacity only — GPU-composited, no
+   repaint, no layout. Base colour moves to <html> so z-index:-1 sits above it.
+
+   Slow drift, not a pulse: players stare at this page for 1-3 minutes while
+   picking slots, and anything that throbs starts reading as a notification.
+   ~2px/second — invisible frame to frame, clearly different after 30s.
+   The two layers run on 54s and 71s so they never fall into sync.
+
+   Delete this whole block to remove the effect. Nothing else depends on it.
+   ──────────────────────────────────────────────────────────────────── */
+html{background:#070708}
+body{background:transparent!important}
+body::before,body::after{content:"";position:fixed;inset:-18%;pointer-events:none;z-index:-1;will-change:transform,opacity}
+body::before{background:radial-gradient(1150px 640px at 86% 12%,var(--acc-12),transparent 60%);animation:layawDriftA 54s ease-in-out infinite alternate}
+body::after{background:radial-gradient(880px 540px at 8% 90%,var(--acc-08),transparent 58%);animation:layawDriftB 71s ease-in-out infinite alternate}
+@keyframes layawDriftA{0%{transform:translate3d(0,0,0) scale(1);opacity:.82}50%{transform:translate3d(-3.5%,2.6%,0) scale(1.07);opacity:1}100%{transform:translate3d(2.6%,-2%,0) scale(1.02);opacity:.9}}
+@keyframes layawDriftB{0%{transform:translate3d(0,0,0) scale(1.05);opacity:.88}50%{transform:translate3d(3%,-3%,0) scale(1);opacity:1}100%{transform:translate3d(-2.2%,2.6%,0) scale(1.06);opacity:.84}}
+@media (prefers-reduced-motion:reduce){body::before,body::after{animation:none;opacity:.9}}
+</style></head> <body> <div class="wrap"> <div class="pagehead"> <a href="index.html" title="Back">‹</a> <h1>Booking Status</h1> </div> <div id="loading" class="loading">Loading your booking…</div> <div id="errorBox" class="error-box" style="display:none">
 </div> <div id="content" style="display:none"> <div class="card idcard"> <div>
 <div class="l">Booking ID</div>
 <div class="v" id="bid">—</div>
