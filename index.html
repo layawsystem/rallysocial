@@ -937,7 +937,20 @@ $("emailInput").value="",appliedPromo=null,$("voucherInput")&&($("voucherInput")
 $("receiptPreview").style.display="none";const e=$("uploadBox").querySelector(".big")
 ;e&&(e.textContent="☁️ Tap to upload image"),renderGrid(),updateSummary(),renderCalendar(),window.scrollTo({top:0,
 behavior:"smooth"})},$("continueBtn").onclick=goCheckout,$("mbContinue").onclick=goCheckout,
-window.addEventListener("pagehide",function(){if(reservedBookingId)releaseReservation()});$("backToSlots").onclick=async()=>{clearHoldTimer();await releaseReservation();$("checkoutView").style.display="none",$("app").style.display="block",
+/* No unload/pagehide release here, deliberately. releaseReservation() is async
+   (a query plus a batch commit); the browser cancels in-flight requests while
+   the page unloads, so it never completes. This was tried and measured — the
+   reserved doc survived the reload every time.
+   Doing it properly needs navigator.sendBeacon() posting to a small HTTP
+   function that deletes the reserved docs + slotLocks server-side.
+   Not built because it is not a real-world defect: an abandoned hold only
+   blocks the person who abandoned it, and it clears itself once holdUntil
+   passes (settings.checkoutMinutes). The Kitchen Arena has run in production
+   on byte-identical code with no complaints.
+   Do NOT release on visibilitychange either — players switch to the GCash app
+   to pay and come back; releasing there would drop the slots of everyone who
+   is actually paying. */
+$("backToSlots").onclick=async()=>{clearHoldTimer();await releaseReservation();$("checkoutView").style.display="none",$("app").style.display="block",
 window.innerWidth<=1e3&&($("mobileBar").style.display="flex")},$("uploadBox").onclick=()=>$("receiptInput").click(),
 $("receiptInput").onchange=e=>{const t=e.target.files[0];if(!t)return
 ;if(t.size>5242880)return void toast("Image too large (max 5MB).");const o=new FileReader;o.onload=e=>{const t=new Image
