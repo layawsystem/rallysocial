@@ -594,6 +594,19 @@ body::after{background:radial-gradient(880px 540px at 8% 90%,var(--acc-08),trans
 @keyframes layawDriftA{0%{transform:translate3d(0,0,0) scale(1);opacity:.82}50%{transform:translate3d(-3.5%,2.6%,0) scale(1.07);opacity:1}100%{transform:translate3d(2.6%,-2%,0) scale(1.02);opacity:.9}}
 @keyframes layawDriftB{0%{transform:translate3d(0,0,0) scale(1.05);opacity:.88}50%{transform:translate3d(3%,-3%,0) scale(1);opacity:1}100%{transform:translate3d(-2.2%,2.6%,0) scale(1.06);opacity:.84}}
 @media (prefers-reduced-motion:reduce){body::before,body::after{animation:none;opacity:.9}}
+</style><style>/* LAYAW-PARTICIPANT-AGREEMENT */
+#agreementCard .agr-intro{margin:-6px 0 14px}
+#agreementBody{max-height:300px;overflow-y:auto;padding:16px 18px;border:1px solid var(--input-line);border-radius:12px;background:var(--input-bg);font-size:13.5px;line-height:1.65;color:var(--text-2)}
+#agreementBody h2{font-size:14px;font-weight:800;color:var(--text);margin:0 0 6px;letter-spacing:.01em}
+#agreementBody h3{font-size:13px;font-weight:800;color:var(--text);margin:18px 0 6px}
+#agreementBody p{margin:0 0 9px}
+#agreementBody ul{margin:0 0 10px;padding-left:20px}
+#agreementBody li{margin:0 0 3px}
+#agreementBody strong{color:var(--text)}
+.agr-scrollnote{font-size:12px;color:var(--muted);margin:8px 0 18px;text-align:center}
+.agr-accept{display:flex;gap:11px;align-items:flex-start;margin-top:18px;padding:14px 16px;border:1px solid var(--input-line);border-radius:12px;background:var(--acc-05,rgba(255,255,255,.03));cursor:pointer}
+.agr-accept input{width:19px;height:19px;flex-shrink:0;margin-top:1px;accent-color:var(--green);cursor:pointer}
+.agr-accept span{font-size:13.5px;line-height:1.55;color:var(--text-2)}
 </style></head> <body> <div id="iabBanner" style="display:none;position:sticky;top:0;z-index:60;background:#0B97A6;color:#fff;padding:12px 16px;font-size:13.5px;line-height:1.5;text-align:center;font-weight:600">For the best experience, open this page in your browser: tap the <strong>&#8942;</strong> or <strong>&hellip;</strong> menu, then choose <strong>&ldquo;Open in browser&rdquo;</strong> (Chrome or Safari).<button id="iabClose" style="margin-left:10px;background:rgba(255,255,255,.25);border:none;color:#fff;border-radius:6px;padding:3px 9px;font-weight:700;cursor:pointer">Got it</button></div> <div class="wrap"> <div class="brand"> <img id="logo" alt="" style="display:none"/> <div>
 <div class="eyebrow" id="bizEyebrow">Pickleball</div>
 <h1 id="bizName">Loading…</h1>
@@ -678,7 +691,7 @@ body::after{background:radial-gradient(880px 540px at 8% 90%,var(--acc-08),trans
 <label class="fl">Email</label>
 <input type="email" id="emailInput" placeholder="you@email.com" inputmode="email" autocomplete="email"/>
 <div class="sum-note" style="margin-top:6px">We'll send your booking status and confirmation to this email.</div>
-</div> </div> <div class="card"> <h3>Select a payment method</h3> <p class="sum-note" style="margin:-6px 0 14px">Choose one option below.</p> <div class="pay-methods" id="payMethods">
+</div> </div> <div class="card" id="agreementCard" style="display:none"> <h3>First time booking with us</h3> <p class="sum-note agr-intro">Please read and accept the Participant Agreement. You only do this once &mdash; next time you book with this email address, we will skip straight to payment.</p> <div id="agreementBody"></div> <p class="agr-scrollnote" id="agrEffective"></p> <div class="field-gap"> <label class="fl">Date of birth</label> <input type="date" id="dobInput"/> </div> <div class="field-gap"> <label class="fl">Home address</label> <input type="text" id="addrInput" placeholder="House/unit, street, barangay, city"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; name</label> <input type="text" id="ecNameInput" placeholder="Full name"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; relationship</label> <input type="text" id="ecRelInput" placeholder="Spouse, parent, sibling, friend"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; mobile number</label> <input type="tel" id="ecNumInput" placeholder="09XX XXX XXXX"/> </div> <label class="agr-accept" for="agrAccept"> <input type="checkbox" id="agrAccept"/> <span>I have read, understood, and voluntarily agree to be bound by this Participant Agreement. I understand it includes a release of liability and an assumption of risk.</span> </label> </div> <div class="card"> <h3>Select a payment method</h3> <p class="sum-note" style="margin:-6px 0 14px">Choose one option below.</p> <div class="pay-methods" id="payMethods">
 </div> <div class="pay-detail" id="payDetail" style="display:none">
 </div> </div> <div class="card"> <h3>Upload receipt</h3> <p class="sum-note" style="margin:-6px 0 14px">Upload your payment proof. <strong style="color:var(--cancel)">Required.</strong>
 </p> <div class="upload" id="uploadBox"> <div class="big">☁️ Tap to upload image</div> <div class="small">JPG or PNG, max 5MB</div> <img class="preview" id="receiptPreview" style="display:none"/> </div> <input type="file" id="receiptInput" accept="image/*" style="display:none"/> </div> <button class="btn btn-navy" id="submitBtn">Submit Booking</button> <div class="hold-note">🔒 Your slot is held as <strong>Pending</strong>. We'll confirm it shortly after verifying your payment.</div> <div class="footer" id="footerLinks2">
@@ -699,6 +712,39 @@ APPCHECK_SITE_KEY&&0!==APPCHECK_SITE_KEY.indexOf("PASTE_")&&firebase.appCheck(e)
 }catch(e){console.warn("AppCheck:",e)}db=firebase.firestore();try{db.enablePersistence({synchronizeTabs:!0}).catch(function(){})}catch(e){}}catch(e){
 showError("Could not connect. Check the Firebase config at the top of this file.")}
 let viewYear,viewMonth,SETTINGS=null,COURTS=[],RATES=[],PROMOS=[],appliedPromo=null,selectedDate=null,cart=new Set,bookedSet=new Set,pendingSet=new Set,availUnsub=null,chosenPayment=null,receiptData=null,holdTimer=null,holdDeadline=0,reservedIds=[],reservedLockIds=[],reservedBookingId=null,releasingBookingId=null,reserving=!1
+/* ── Participant agreement ────────────────────────────────────────────────
+   AGREEMENT is settings/agreement, or null for venues that do not use one.
+   agreementRequired is recomputed whenever the email changes: we hash the
+   address and look up a single participantSignatures document. A hit for the
+   CURRENT version means they have already signed and see nothing. */
+;let AGREEMENT=null,agreementRequired=!1,agreementHash="",agreementCheckedFor=""
+;async function sha256Hex(str){try{
+const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str))
+;return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("")
+}catch(e){console.warn("hash unavailable",e);return""}}
+;async function refreshAgreementGate(){const card=$("agreementCard");if(!card)return
+;if(!AGREEMENT||!AGREEMENT.bodyHtml){card.style.display="none";agreementRequired=!1;return}
+;const email=($("emailInput").value||"").trim().toLowerCase()
+;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){card.style.display="none";agreementRequired=!1;agreementCheckedFor="";return}
+;if(email===agreementCheckedFor)return
+;agreementCheckedFor=email
+;const h=await sha256Hex(email);
+/* No Web Crypto (very old browser): ask everyone rather than silently skip. */
+agreementHash=h
+;let signed=!1
+;if(h)try{const d=await db.collection("participantSignatures").doc(h).get()
+;signed=d.exists&&d.data().agreementVersion===AGREEMENT.version}catch(e){signed=!1}
+;if(email!==agreementCheckedFor)return
+/* a newer keystroke already superseded this lookup */
+;agreementRequired=!signed
+;if(agreementRequired){$("agreementBody").innerHTML=AGREEMENT.bodyHtml
+;$("agrEffective").textContent=(AGREEMENT.effectiveDate?"Effective "+AGREEMENT.effectiveDate+" · ":"")+"Version "+(AGREEMENT.version||"1.0")
+;$("agreementBody").scrollTop=0}
+;card.style.display=agreementRequired?"block":"none"}
+;function resetAgreementFields(){agreementRequired=!1;agreementHash="";agreementCheckedFor=""
+;const c=$("agreementCard");if(c)c.style.display="none"
+;["dobInput","addrInput","ecNameInput","ecRelInput","ecNumInput"].forEach(id=>{const el=$(id);if(el)el.value=""})
+;const a=$("agrAccept");if(a)a.checked=!1}
 /* ── EASY-EDIT SETTING ── minutes of grace before a time slot is marked "Past".
    A slot stays open for this many minutes AFTER its start time, then turns Past.
    Example at 15: the 8:00–9:00 slot stays Open until 8:15, then shows Past at 8:16. */
@@ -719,13 +765,14 @@ return"₱"+Number(e).toLocaleString("en-PH")}function darken(e,t){
 }function ck(e,t,o){return e+"|"+t+"|"+o}
 function isBlocked(court,date,slotKey){return Array.isArray(court.blocks)&&court.blocks.some(b=>b.date===date&&Array.isArray(b.slots)&&b.slots.includes(slotKey))}async function loadData(){if(db)try{
 const _to=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),ms))]);
-const[e,t,rr,pp]=await _to(Promise.all([
+const[e,t,rr,pp,ag]=await _to(Promise.all([
 db.collection("settings").doc("config").get(),
 db.collection("courts").get(),
 db.collection("rates").get().catch(()=>null),
-db.collection("promos").get().catch(()=>null)
+db.collection("promos").get().catch(()=>null),
+db.collection("settings").doc("agreement").get().catch(()=>null)
 ]),12e3);if(!e.exists)return void showError("Settings not found.")
-;SETTINGS=e.data();if(COURTS=[],t.forEach(e=>{const t=e.data()
+;SETTINGS=e.data();AGREEMENT=(ag&&ag.exists)?ag.data():null;if(COURTS=[],t.forEach(e=>{const t=e.data()
 ;!1!==t.active&&COURTS.push({id:e.id,name:t.name||"Court",status:t.status||"",blocks:Array.isArray(t.blocks)?t.blocks:[]})}),COURTS.sort((e,t)=>e.name.localeCompare(t.name)),
 !COURTS.length)return void showError("No active courts found.");RATES=[];if(rr)rr.forEach(e=>{const t=e.data();let o=hm2min(t.start),n=hm2min(t.end);n<=o&&(n+=1440),RATES.push({start:o,end:n,
 rate:Number(t.rate)})}),RATES.sort((e,t)=>e.start-t.start);PROMOS=[];if(pp)pp.forEach(e=>PROMOS.push({id:e.id,...e.data()}));applyTheme(),renderBrand(),startHero(),renderFooterLinks();const o=today();viewYear=o.getFullYear(),
@@ -937,9 +984,9 @@ updateSummary()},$("expireBtn").onclick=()=>{$("expireOverlay").classList.remove
 $("checkoutView").style.display="none",$("successView").style.display="none",$("app").style.display="block",
 window.innerWidth<=1e3&&($("mobileBar").style.display="flex"),$("nameInput").value="",$("contactInput").value="",
 $("emailInput").value="",appliedPromo=null,$("voucherInput")&&($("voucherInput").value=""),setVoucherMsg("",!0),
-$("receiptPreview").style.display="none";const e=$("uploadBox").querySelector(".big")
+$("receiptPreview").style.display="none";resetAgreementFields();const e=$("uploadBox").querySelector(".big")
 ;e&&(e.textContent="☁️ Tap to upload image"),renderGrid(),updateSummary(),renderCalendar(),window.scrollTo({top:0,
-behavior:"smooth"})},$("continueBtn").onclick=goCheckout,$("mbContinue").onclick=goCheckout,
+behavior:"smooth"})},$("emailInput").addEventListener("change",refreshAgreementGate),$("emailInput").addEventListener("blur",refreshAgreementGate),$("continueBtn").onclick=goCheckout,$("mbContinue").onclick=goCheckout,
 /* No unload/pagehide release here, deliberately. releaseReservation() is async
    (a query plus a batch commit); the browser cancels in-flight requests while
    the page unloads, so it never completes. This was tried and measured — the
@@ -968,6 +1015,14 @@ const e=$("nameInput").value.trim(),t=$("contactInput").value.trim(),o=$("emailI
 ;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o))return void toast("Please enter a valid email address.")
 ;if(paymentOptions().length&&!chosenPayment)return void toast("Please select a payment method.")
 ;if(paymentOptions().length&&!receiptData)return void toast("Please upload your payment receipt.")
+;await refreshAgreementGate()
+;if(agreementRequired){
+if(!$("dobInput").value)return void toast("Please enter your date of birth.")
+;if(!$("addrInput").value.trim())return void toast("Please enter your home address.")
+;if(!$("ecNameInput").value.trim())return void toast("Please enter an emergency contact name.")
+;if(!$("ecNumInput").value.trim())return void toast("Please enter an emergency contact number.")
+;if(!$("agrAccept").checked)return void toast("Please read and accept the Participant Agreement.")
+;if(!agreementHash)return void toast("Your browser could not complete this step. Please update it, or use Chrome or Safari.")}
 ;const n=$("submitBtn");n.disabled=!0,n.textContent="Submitting…";try{
 /* The slots are already held by our reservation (goCheckout). Finalize it:
    flip each reserved doc to "pending" with its amount, then write the contact
@@ -983,6 +1038,16 @@ const a={};[...cart].forEach(e=>{const[t,o,n]=e.split("|");((a[t]=a[t]||{})[o]=a
 ;rsnap.forEach(doc=>{const t=doc.data();const amt=Math.round((s[t.date+"|"+t.court]||0)*d)
 ;i.update(doc.ref,{amount:amt,paymentMethod:chosenPayment||"",status:"pending",holdUntil:firebase.firestore.FieldValue.delete()})})
 ;reservedLockIds.forEach(id=>i.delete(db.collection("slotLocks").doc(id)))
+;;if(agreementRequired&&agreementHash){
+i.set(db.collection("participants").doc(r),{bookingId:r,name:e,email:o,contact:t,
+dateOfBirth:$("dobInput").value||"",address:$("addrInput").value.trim(),
+emergencyName:$("ecNameInput").value.trim(),emergencyRelationship:$("ecRelInput").value.trim(),
+emergencyNumber:$("ecNumInput").value.trim(),
+agreementVersion:AGREEMENT&&AGREEMENT.version||"",agreementContentHash:AGREEMENT&&AGREEMENT.contentHash||"",
+acceptedAt:firebase.firestore.FieldValue.serverTimestamp()})
+;i.set(db.collection("participantSignatures").doc(agreementHash),{
+agreementVersion:AGREEMENT&&AGREEMENT.version||"",lastBookingId:r,
+signedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:!0})}
 ;if(i.set(db.collection("bookingContacts").doc(r),{
 bookingId:r,bookerName:e,contact:t,email:o,promoCode:appliedPromo?String(appliedPromo.code||""):"",discount:c,
 createdAt:firebase.firestore.FieldValue.serverTimestamp()}),await i.commit(),reservedIds=[],reservedLockIds=[],reservedBookingId=null,receiptData)try{
