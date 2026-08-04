@@ -599,7 +599,7 @@ body::after{background:radial-gradient(880px 540px at 8% 90%,var(--acc-08),trans
 <h1 id="bizName">Loading…</h1>
 </div> </div> <p class="subline" id="bizTagline">
 </p> <div id="heroWrap" class="hero-wrap" style="display:none">
-</div> <div id="loading" class="loading">Connecting to the booking system…<div id="loadHint" style="display:none;margin-top:16px;font-size:14px;color:var(--muted);line-height:1.6">Taking longer than usual. If you opened this from Messenger or Facebook, tap the <strong>•••</strong> menu and choose <strong>“Open in browser”</strong> (Chrome or Safari) for the best experience.<br><br><button id="retryLoad" style="margin-top:8px;background:var(--teal,#0B97A6);color:#fff;border:none;border-radius:8px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer">Retry</button></div></div> <div id="errorBox" class="error-box" style="display:none">
+</div> <div id="loading" class="loading">Connecting to the booking system…<div id="loadHint" style="display:none;margin-top:16px;font-size:14px;color:var(--muted);line-height:1.6"><span id="loadHintMsg">Taking longer than usual. Reload the page.</span><br><br><button id="retryLoad" style="margin-top:8px;background:var(--teal,#0B97A6);color:#fff;border:none;border-radius:8px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer">Retry</button></div></div> <div id="errorBox" class="error-box" style="display:none">
 </div> <div id="app" style="display:none"> <div class="grid-layout"> <div> <div class="card"> <h3>Select a date</h3> <div class="cal-nav"> <button class="btn-ghost" id="prevMonth">‹</button> <button class="btn-ghost today" id="todayBtn">Today</button> <button class="btn-ghost" id="nextMonth">›</button> </div> <div class="cal-month" id="calMonth">
 </div> <div class="cal-grid" id="calGrid">
 </div> <p class="cal-note" id="calNote">
@@ -731,7 +731,7 @@ db.collection("promos").get().catch(()=>null)
 rate:Number(t.rate)})}),RATES.sort((e,t)=>e.start-t.start);PROMOS=[];if(pp)pp.forEach(e=>PROMOS.push({id:e.id,...e.data()}));applyTheme(),renderBrand(),startHero(),renderFooterLinks();const o=today();viewYear=o.getFullYear(),
 viewMonth=o.getMonth(),selectedDate=dstr(o),renderCalendar(),renderGridHead(),watchAvailability(),watchCourtsLive(),updateSummary(),
 window.__clearLoadHint&&window.__clearLoadHint(),$("loading").style.display="none",$("app").style.display="block"}catch(e){console.error(e),
-showError("timeout"===e.message?"Couldn't connect. If you opened this from Messenger or Facebook, tap ••• and choose “Open in browser”, then try again.":"Failed to load data: "+(e.message||e))}}function applyTheme(){
+showError("timeout"===e.message?(window.__inApp?"Couldn't connect. If you opened this from Messenger or Facebook, tap ••• and choose “Open in browser”, then try again.":"Couldn't connect. Reload the page."):"Failed to load data: "+(e.message||e))}}function applyTheme(){
 const e=document.documentElement.style,t=SETTINGS.colorPrimary||"#242428",o=SETTINGS.colorAccent||"#242428"
 ;e.setProperty("--navy",t),e.setProperty("--navy-d",SETTINGS.colorPrimaryDark||"#17171A"),e.setProperty("--green",o),
 e.setProperty("--green-d",SETTINGS.colorAccentDark||"#17171A")
@@ -1000,8 +1000,8 @@ $("nameInput").value="",$("contactInput").value="",$("emailInput").value="",$("r
 $("uploadBox").querySelector(".big").textContent="☁️ Tap to upload image",$("successView").style.display="none",
 $("app").style.display="block",window.innerWidth<=1e3&&($("mobileBar").style.display="flex"),renderGrid(),
 updateSummary(),renderCalendar(),window.scrollTo({top:0,behavior:"smooth"})},setInterval(()=>{
-SETTINGS&&COURTS.length&&selectedDate===dstr(today())&&"none"!==$("app").style.display&&renderGrid()},6e4),(function(){var ua=navigator.userAgent||"";var inApp=/FBAN|FBAV|FB_IAB|Instagram|Messenger|Line\/|Twitter|GSA/i.test(ua);
-var hintTimer=setTimeout(function(){var h=document.getElementById("loadHint");if(h&&document.getElementById("loading")&&"none"!==document.getElementById("loading").style.display)h.style.display="block"},inApp?800:6e3);var rb=document.getElementById("retryLoad");rb&&(rb.onclick=function(){location.reload()});window.__clearLoadHint=function(){clearTimeout(hintTimer)}})(),loadData()</script> <!-- ══════════════════ LAYAW MOTION v2 · markup + behaviour ══════════════════ -->
+SETTINGS&&COURTS.length&&selectedDate===dstr(today())&&"none"!==$("app").style.display&&renderGrid()},6e4),(function(){var ua=navigator.userAgent||"";var inApp=/FBAN|FBAV|FB_IAB|Instagram|Messenger|Line\/|Twitter|GSA/i.test(ua);window.__inApp=inApp;
+var hintTimer=setTimeout(function(){var h=document.getElementById("loadHint");if(h&&document.getElementById("loading")&&"none"!==document.getElementById("loading").style.display){var m=document.getElementById("loadHintMsg");if(m&&inApp)m.innerHTML="Taking longer than usual. If you opened this from Messenger or Facebook, tap the <strong>•••</strong> menu and choose <strong>“Open in browser”</strong> (Chrome or Safari) for the best experience.";h.style.display="block"}},inApp?800:6e3);var rb=document.getElementById("retryLoad");rb&&(rb.onclick=function(){location.reload()});window.__clearLoadHint=function(){clearTimeout(hintTimer)}})(),loadData()</script> <!-- ══════════════════ LAYAW MOTION v2 · markup + behaviour ══════════════════ -->
 <div class="rs-seal" id="rsSeal" aria-hidden="true">
 <div class="rs-seal-scrim" id="rsSealScrim"></div>
 <svg class="rs-seal-mark" id="rsSealMark" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
