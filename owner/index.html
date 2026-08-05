@@ -1102,7 +1102,7 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 <button class="btn-ghost" id="courtModalClose" style="width:100%;margin-top:6px;padding:13px">Done</button>
 </div>
 </div>
-<div id="slotMenu" class="slot-menu"><div class="slot-menu-head" id="slotMenuHead"></div><button class="slot-menu-item" id="slotMenuToggle"></button><button class="slot-menu-item" id="slotMenuMulti">Block multiple slots…</button><button class="slot-menu-item slot-menu-cancel" id="slotMenuCancel">Cancel</button></div>
+<div id="slotMenu" class="slot-menu"><div class="slot-menu-head" id="slotMenuHead"></div><div style="padding:2px 12px 10px"><input type="text" id="slotMenuNote" placeholder="Note &mdash; who is this for?" style="width:100%;padding:8px 10px;font:inherit;font-size:12.5px;border:1px solid var(--input-line);border-radius:8px;background:var(--input-bg);color:var(--text)"/><div style="font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.35">Only you and your staff can see this.</div></div><button class="slot-menu-item" id="slotMenuToggle"></button><button class="slot-menu-item" id="slotMenuMulti">Block multiple slots…</button><button class="slot-menu-item slot-menu-cancel" id="slotMenuCancel">Cancel</button></div>
 <div class="overlay" id="multiCourtOverlay">
 <div class="modal" style="max-width:520px;max-height:88vh;overflow-y:auto">
 <h3 style="margin-bottom:4px">Block multiple courts</h3>
@@ -1235,7 +1235,7 @@ $("appFoot").textContent="© "+(new Date).getFullYear()+" "+(SETTINGS&&SETTINGS.
 $("datePill").textContent=(new Date).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"
 })+" ("+(new Date).toLocaleDateString("en-US",{weekday:"short"})+")"}async function startDashboard(){
 SETTINGS||await loadBase();const e=today();viewYear=e.getFullYear(),viewMonth=e.getMonth(),selectedDate=dstr(e),
-renderCalendar(),renderSchedHead(),loadBlockNotesForDate(selectedDate).then(function(){try{renderGrid()}catch(e){}}),watchDay(),watchPending(),watchCourts(),startExpiryRefresh(),openSection("dashboard")}/* ── Participants ─────────────────────────────────────────────────────────
+renderCalendar(),renderSchedHead(),watchDay(),watchPending(),watchCourts(),startExpiryRefresh(),openSection("dashboard")}/* ── Participants ─────────────────────────────────────────────────────────
    Reads the participants collection, which the rules restrict to managers.
    Loaded on demand when the section is opened, then filtered in memory so
    typing in the search box costs nothing. */
@@ -1539,7 +1539,7 @@ function openSlotMenu(ev,court,slotKey,isBlocked){ev.stopPropagation();
 SLOTMENU_CTX={court:court,slotKey:slotKey,blocked:isBlocked};
 const menu=$("slotMenu");
 $("slotMenuHead").textContent=court.name+" · "+hourLabel(hm2minKey(slotKey));
-$("slotMenuToggle").textContent=isBlocked?"Unblock this slot":"Block this slot";
+$("slotMenuToggle").textContent=isBlocked?"Unblock this slot":"Block this slot";var __ni=$("slotMenuNote");__ni.value=noteFor(court.id,selectedDate,slotKey);__ni.onchange=async function(){await saveBlockNote(court.id,selectedDate,slotKey,__ni.value);try{renderGrid()}catch(e){}toast("Note saved.")};
 menu.classList.add("show");
 /* Position next to the tapped cell, kept inside the viewport. */
 const r=ev.currentTarget.getBoundingClientRect(),mw=menu.offsetWidth||200,mh=menu.offsetHeight||160;
@@ -1550,6 +1550,7 @@ menu.style.left=left+"px";menu.style.top=top+"px"}
 function closeSlotMenu(){$("slotMenu").classList.remove("show");SLOTMENU_CTX=null}
 function hm2minKey(k){const p=String(k||"").split(":");return 60*(Number(p[0])||0)+(Number(p[1])||0)}
 async function slotMenuToggle(){if(!SLOTMENU_CTX)return;const{court,slotKey,blocked}=SLOTMENU_CTX;
+const typedNote=($("slotMenuNote").value||"").trim();
 closeSlotMenu();
 const cur=Array.isArray(court.blocks)?court.blocks.map(b=>({date:b.date,slots:(b.slots||[]).slice()})):[];
 let next;
@@ -1563,6 +1564,7 @@ const idx=COURTS.findIndex(c=>c.id===court.id);if(idx>=0)COURTS[idx].blocks=next
    nothing — clear it so no name lingers. */
 /* This toggle affects ONE slot, so clear only that slot's note. */
 if(blocked)await saveBlockNote(court.id,selectedDate,slotKey,"");
+else if(typedNote)await saveBlockNote(court.id,selectedDate,slotKey,typedNote);
 renderCourtStatus();renderSchedHead();renderGrid();
 toast(blocked?"Slot opened.":"Slot blocked.")}
 catch(e){console.error(e),toast("Could not update. Please try again.")}}
@@ -1584,6 +1586,8 @@ try{renderSchedHead();renderGrid()}catch(e){}
 if(CAV_COURT){var fresh=COURTS.find(function(c){return c.id===CAV_COURT.id});if(fresh){CAV_COURT=fresh;try{renderCavStatus();renderCavBlocks();if($("cavDate").value)renderCavSlots()}catch(e){}}}
 },function(e){console.warn("courts watch:",e)})}
 function watchDay(){dayUnsub&&dayUnsub(),$("dayTitle").textContent=niceDate(selectedDate),
+/* block notes are per-date, so refresh them whenever the day changes */
+loadBlockNotesForDate(selectedDate).then(function(){try{renderGrid()}catch(e){}}),
 dayUnsub=db.collection("bookings").where("date","==",selectedDate).onSnapshot(async e=>{DAY=[],e.forEach(e=>DAY.push({
 id:e.id,...e.data()})),DAY.sort((e,t)=>{const n=e.createdAt&&e.createdAt.seconds||0
 ;return(t.createdAt&&t.createdAt.seconds||0)-n});const t=orderGroups(DAY.filter(e=>isLiveBooking(e)));let n=0,a=0
