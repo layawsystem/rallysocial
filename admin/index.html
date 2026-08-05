@@ -554,7 +554,7 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 <button class="btn-ghost" id="courtModalClose" style="width:100%;margin-top:6px;padding:13px">Done</button>
 </div>
 </div>
-<div id="slotMenu" class="slot-menu"><div class="slot-menu-head" id="slotMenuHead"></div><button class="slot-menu-item" id="slotMenuToggle"></button><button class="slot-menu-item" id="slotMenuMulti">Block multiple slots…</button><button class="slot-menu-item slot-menu-cancel" id="slotMenuCancel">Cancel</button></div>
+<div id="slotMenu" class="slot-menu"><div class="slot-menu-head" id="slotMenuHead"></div><div style="padding:2px 12px 10px"><input type="text" id="slotMenuNote" placeholder="Note &mdash; who is this for?" style="width:100%;padding:8px 10px;font:inherit;font-size:12.5px;border:1px solid var(--input-line);border-radius:8px;background:var(--input-bg);color:var(--text)"/><div style="font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.35">Staff only. Players never see this.</div></div><button class="slot-menu-item" id="slotMenuToggle"></button><button class="slot-menu-item" id="slotMenuMulti">Block multiple slots…</button><button class="slot-menu-item slot-menu-cancel" id="slotMenuCancel">Cancel</button></div>
 <div class="overlay" id="multiCourtOverlay">
 <div class="modal" style="max-width:520px;max-height:88vh;overflow-y:auto">
 <h3 style="margin-bottom:4px">Block multiple courts</h3>
@@ -833,11 +833,16 @@ toast((unblock?"Unblocked ":"Blocked ")+ok+" court"+(1===ok?"":"s")+" across "+d
 
 /* ── Slot quick menu (tap a slot in the grid) ──────────────────────── */
 let SLOTMENU_CTX=null;
-function openSlotMenu(ev,court,slotKey,isBlocked){ev.stopPropagation();
+async function saveBlockNote(courtId,date,note){var id=courtId+"__"+date,txt=(note||"").trim()
+;try{if(txt){await db.collection("courtBlockNotes").doc(id).set({courtId:courtId,date:date,note:txt,
+updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:!0});BLOCK_NOTES[id]=txt}
+else{await db.collection("courtBlockNotes").doc(id).delete().catch(function(){});delete BLOCK_NOTES[id]}
+return!0}catch(e){console.warn("block note save failed",e);toast("Could not save the note.");return!1}}
+;function openSlotMenu(ev,court,slotKey,isBlocked){ev.stopPropagation();
 SLOTMENU_CTX={court:court,slotKey:slotKey,blocked:isBlocked};
 const menu=$("slotMenu");
 $("slotMenuHead").textContent=court.name+" · "+hourLabel(hm2minKey(slotKey));
-$("slotMenuToggle").textContent=isBlocked?"Open this slot":"Block this slot";
+$("slotMenuToggle").textContent=isBlocked?"Open this slot":"Block this slot";var __nk=court.id+"__"+selectedDate,__ni=$("slotMenuNote");__ni.value=BLOCK_NOTES[__nk]||"";__ni.onchange=async function(){await saveBlockNote(court.id,selectedDate,__ni.value);try{renderGrid()}catch(e){}toast("Note saved.")};
 menu.classList.add("show");
 /* Position next to the tapped cell, kept inside the viewport. */
 const r=ev.currentTarget.getBoundingClientRect(),mw=menu.offsetWidth||200,mh=menu.offsetHeight||160;
@@ -848,6 +853,7 @@ menu.style.left=left+"px";menu.style.top=top+"px"}
 function closeSlotMenu(){$("slotMenu").classList.remove("show");SLOTMENU_CTX=null}
 function hm2minKey(k){const p=String(k||"").split(":");return 60*(Number(p[0])||0)+(Number(p[1])||0)}
 async function slotMenuToggle(){if(!SLOTMENU_CTX)return;const{court,slotKey,blocked}=SLOTMENU_CTX;
+const typedNote=($("slotMenuNote").value||"").trim();
 closeSlotMenu();
 const cur=Array.isArray(court.blocks)?court.blocks.map(b=>({date:b.date,slots:(b.slots||[]).slice()})):[];
 let next;
@@ -857,6 +863,11 @@ if(ex){if(!ex.slots.includes(slotKey))ex.slots.push(slotKey);ex.slots.sort()}
 else next.push({date:selectedDate,slots:[slotKey]})}
 try{await db.collection("courts").doc(court.id).update({blocks:next});
 const idx=COURTS.findIndex(c=>c.id===court.id);if(idx>=0)COURTS[idx].blocks=next;
+/* Note lives per court+date. Keep it while any slot that day is still
+   blocked; drop it once the last one is opened, so no name is left
+   attached to nothing. */
+if(blocked){if(!next.some(b=>b.date===selectedDate))await saveBlockNote(court.id,selectedDate,"")}
+else if(typedNote)await saveBlockNote(court.id,selectedDate,typedNote);
 renderCourtStatus();renderSchedHead();renderGrid();
 toast(blocked?"Slot opened.":"Slot blocked.")}
 catch(e){console.error(e),toast("Could not update. Please try again.")}}
