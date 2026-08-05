@@ -1235,7 +1235,7 @@ $("appFoot").textContent="© "+(new Date).getFullYear()+" "+(SETTINGS&&SETTINGS.
 $("datePill").textContent=(new Date).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"
 })+" ("+(new Date).toLocaleDateString("en-US",{weekday:"short"})+")"}async function startDashboard(){
 SETTINGS||await loadBase();const e=today();viewYear=e.getFullYear(),viewMonth=e.getMonth(),selectedDate=dstr(e),
-renderCalendar(),renderSchedHead(),watchDay(),watchPending(),watchCourts(),startExpiryRefresh(),openSection("dashboard")}/* ── Participants ─────────────────────────────────────────────────────────
+renderCalendar(),renderSchedHead(),loadBlockNotesForDate(selectedDate).then(function(){try{renderGrid()}catch(e){}}),watchDay(),watchPending(),watchCourts(),startExpiryRefresh(),openSection("dashboard")}/* ── Participants ─────────────────────────────────────────────────────────
    Reads the participants collection, which the rules restrict to managers.
    Loaded on demand when the section is opened, then filtered in memory so
    typing in the search box costs nothing. */
@@ -1368,23 +1368,29 @@ c.innerHTML='<div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="curren
 c.onclick=()=>openCourtModal(o);
 e.appendChild(c)})}
 let CAV_COURT=null;
-/* ── Block notes ──────────────────────────────────────────────────────────
-   Kept out of courts/{id} on purpose: that document is public so the booking
-   page can grey out blocked slots, and these notes name real people. */
-let BLOCK_NOTES={}
-;function blockNoteId(courtId,date){return courtId+"__"+date}
-;async function loadBlockNotes(courtId){BLOCK_NOTES={}
-;try{const snap=await db.collection("courtBlockNotes").where("courtId","==",courtId).get()
-;snap.forEach(d=>{const t=d.data();if(t&&t.date)BLOCK_NOTES[t.date]=t.note||""})}
-catch(e){console.warn("block notes load failed",e)}}
-;async function saveBlockNote(courtId,date,note){const id=blockNoteId(courtId,date),txt=(note||"").trim()
-;try{if(txt){await db.collection("courtBlockNotes").doc(id).set({courtId:courtId,date:date,note:txt,
-updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:!0});BLOCK_NOTES[date]=txt}
-else{await db.collection("courtBlockNotes").doc(id).delete().catch(()=>{});delete BLOCK_NOTES[date]}
+let BLOCK_NOTES={}/* ── Block notes ──────────────────────────────────────────────────────────
+   One note per court + date + SLOT. Kept out of courts/{id} on purpose: that
+   document is public so the booking page can grey out blocked slots, and these
+   notes name real people. */
+;function blockNoteKey(courtId,date,slot){return courtId+"__"+date+"__"+String(slot).replace(":","-")}
+;async function saveBlockNote(courtId,date,slot,note){const id=blockNoteKey(courtId,date,slot),txt=(note||"").trim()
+;try{if(txt){await db.collection("courtBlockNotes").doc(id).set({courtId:courtId,date:date,slot:slot,note:txt,
+updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:!0});BLOCK_NOTES[id]=txt}
+else{await db.collection("courtBlockNotes").doc(id).delete().catch(function(){});delete BLOCK_NOTES[id]}
 return!0}catch(e){console.warn("block note save failed",e);toast("Could not save the note.");return!1}}
+;async function loadBlockNotesForCourt(courtId){try{
+const snap=await db.collection("courtBlockNotes").where("courtId","==",courtId).get()
+;snap.forEach(function(d){const t=d.data();if(t&&t.date&&t.slot)BLOCK_NOTES[blockNoteKey(t.courtId,t.date,t.slot)]=t.note||""})}
+catch(e){console.warn("block notes load failed",e)}}
+;async function loadBlockNotesForDate(date){try{
+const snap=await db.collection("courtBlockNotes").where("date","==",date).get()
+;snap.forEach(function(d){const t=d.data();if(t&&t.slot)BLOCK_NOTES[blockNoteKey(t.courtId,t.date,t.slot)]=t.note||""})}
+catch(e){console.warn("block notes load failed",e)}}
+;function noteFor(courtId,date,slot){return BLOCK_NOTES[blockNoteKey(courtId,date,slot)]||""}
+
 ;function openCourtModal(court){CAV_COURT=court;
 $("courtModalTitle").textContent=court.name+(court.type?" ("+court.type+")":"");
-renderCavStatus();$("cavDate").value="";$("cavNote").value="";$("cavBulkNote").value="";renderCavSlots();renderCavBlocks();loadBlockNotes(court.id).then(renderCavBlocks);
+renderCavStatus();$("cavDate").value="";$("cavNote").value="";$("cavBulkNote").value="";renderCavSlots();renderCavBlocks();loadBlockNotesForCourt(court.id).then(renderCavBlocks);
 $("cavBulkStart").value="";$("cavBulkEnd").value="";renderBulkSlots();
 $("courtOverlay").classList.add("show")}
 function closeCourtModal(){$("courtOverlay").classList.remove("show");CAV_COURT=null}
@@ -1419,7 +1425,7 @@ const picked=[...$("cavBulkSlots").querySelectorAll(".cav-slot.on")].map(el=>el.
 const bl=courtBlocks().slice();dates.forEach(d=>{let ex=bl.find(b=>b.date===d);
 if(ex)ex.slots=[...new Set([...(ex.slots||[]),...picked])].sort();else bl.push({date:d,slots:picked.slice().sort()})});
 const ok=await saveCourtField({blocks:bl});if(ok){const nt=$("cavBulkNote").value;
-if(nt&&nt.trim()&&CAV_COURT)for(const d of dates)await saveBlockNote(CAV_COURT.id,d,nt);
+if(nt&&nt.trim()&&CAV_COURT)for(const d of dates)for(const sl of picked)await saveBlockNote(CAV_COURT.id,d,sl,nt);
 $("cavBulkNote").value="";renderCavSlots(),renderCavBlocks();toast("Blocked "+dates.length+" day(s).")}}
 async function cavBulkUnblock(){const dates=new Set(bulkDates());if(!dates.size)return toast("Check your dates.");
 const picked=new Set([...$("cavBulkSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k));if(!picked.size)return;
@@ -1431,7 +1437,7 @@ if(!bl.length){wrap.innerHTML='<div class="cav-empty">No blocks set.</div>';retu
 wrap.innerHTML="";bl.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(b=>{
 const item=document.createElement("div");item.className="cav-block-item";
 const slots=(b.slots||[]).slice().sort().map(sl=>hourLabel(hm2min(sl))).join(", ");
-item.innerHTML='<div class="bd"><strong>'+esc(niceD(b.date))+'</strong><br>'+esc(slots)+'<input type="text" class="blk-note" data-date="'+esc(b.date)+'" placeholder="Note — who is this for?" value="'+esc(BLOCK_NOTES[b.date]||"")+'" style="width:100%;margin-top:7px;padding:7px 9px;font:inherit;font-size:12.5px;border:1px solid var(--input-line);border-radius:8px;background:var(--input-bg);color:var(--text)"/>'+'</div>';const ni=item.querySelector(".blk-note");if(ni)ni.onchange=async()=>{if(CAV_COURT)await saveBlockNote(CAV_COURT.id,b.date,ni.value),toast("Note saved.")};
+item.innerHTML='<div class="bd"><strong>'+esc(niceD(b.date))+'</strong></div>';const bd=item.querySelector(".bd");(b.slots||[]).slice().sort().forEach(function(sl){const row=document.createElement("div");row.style.cssText="display:flex;align-items:center;gap:8px;margin-top:6px";const lab=document.createElement("span");lab.textContent=hourLabel(hm2min(sl));lab.style.cssText="font-size:12px;color:var(--muted);min-width:74px;flex-shrink:0";const inp=document.createElement("input");inp.type="text";inp.className="blk-note";inp.placeholder="Note — who is this for?";inp.value=CAV_COURT?noteFor(CAV_COURT.id,b.date,sl):"";inp.style.cssText="flex:1;padding:6px 9px;font:inherit;font-size:12.5px;border:1px solid var(--input-line);border-radius:8px;background:var(--input-bg);color:var(--text)";inp.onchange=async function(){if(CAV_COURT){await saveBlockNote(CAV_COURT.id,b.date,sl,inp.value);try{renderGrid()}catch(e){}toast("Note saved.")}};row.appendChild(lab);row.appendChild(inp);bd.appendChild(row)});
 const x=document.createElement("button");x.className="bx";x.textContent="Remove";
 x.onclick=()=>removeBlock(b.date);item.appendChild(x);wrap.appendChild(item)})}
 function niceD(d){const[y,m,da]=d.split("-").map(Number);return new Date(y,m-1,da).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})}
@@ -1450,11 +1456,12 @@ const bl=courtBlocks().slice();const existing=bl.find(b=>b.date===d);
 if(existing){existing.slots=[...new Set([...(existing.slots||[]),...picked])].sort()}
 else bl.push({date:d,slots:picked.slice().sort()});
 const ok=await saveCourtField({blocks:bl});
-if(ok){const nt=$("cavNote").value;if(nt&&nt.trim()&&CAV_COURT)await saveBlockNote(CAV_COURT.id,d,nt);
+if(ok){const nt=$("cavNote").value;
+if(nt&&nt.trim()&&CAV_COURT)for(const sl of picked)await saveBlockNote(CAV_COURT.id,d,sl,nt);
 $("cavNote").value="";renderCavSlots();renderCavBlocks();toast("Slots blocked for "+niceD(d)+".")}}
-async function removeBlock(date){const bl=courtBlocks().filter(b=>b.date!==date);
+async function removeBlock(date){const bl0=courtBlocks().find(function(x){return x.date===date});const bl=courtBlocks().filter(b=>b.date!==date);
 const ok=await saveCourtField({blocks:bl});
-if(ok){if(CAV_COURT)await saveBlockNote(CAV_COURT.id,date,"");
+if(ok){if(CAV_COURT){const gone=(courtBlocks().find(function(x){return x.date===date})||{}).slots||[];const had=(bl0||[]).slots||[];for(const sl of had)await saveBlockNote(CAV_COURT.id,date,sl,"")}
 renderCavSlots();renderCavBlocks();toast("Block removed.")}}
 async function renderRecent(){const e=$("recentList"),t=orderGroups(ALLB.slice().sort((e,t)=>{
 const n=e.createdAt&&e.createdAt.seconds||0;return(t.createdAt&&t.createdAt.seconds||0)-n
@@ -1532,7 +1539,7 @@ function openSlotMenu(ev,court,slotKey,isBlocked){ev.stopPropagation();
 SLOTMENU_CTX={court:court,slotKey:slotKey,blocked:isBlocked};
 const menu=$("slotMenu");
 $("slotMenuHead").textContent=court.name+" · "+hourLabel(hm2minKey(slotKey));
-$("slotMenuToggle").textContent=isBlocked?"Open this slot":"Block this slot";
+$("slotMenuToggle").textContent=isBlocked?"Unblock this slot":"Block this slot";
 menu.classList.add("show");
 /* Position next to the tapped cell, kept inside the viewport. */
 const r=ev.currentTarget.getBoundingClientRect(),mw=menu.offsetWidth||200,mh=menu.offsetHeight||160;
@@ -1554,7 +1561,8 @@ try{await db.collection("courts").doc(court.id).update({blocks:next});
 const idx=COURTS.findIndex(c=>c.id===court.id);if(idx>=0)COURTS[idx].blocks=next;
 /* Opening the last blocked slot of a date leaves the note attached to
    nothing — clear it so no name lingers. */
-if(blocked&&!next.some(b=>b.date===selectedDate))await saveBlockNote(court.id,selectedDate,"");
+/* This toggle affects ONE slot, so clear only that slot's note. */
+if(blocked)await saveBlockNote(court.id,selectedDate,slotKey,"");
 renderCourtStatus();renderSchedHead();renderGrid();
 toast(blocked?"Slot opened.":"Slot blocked.")}
 catch(e){console.error(e),toast("Could not update. Please try again.")}}
@@ -1639,6 +1647,7 @@ a.onclick=()=>openDetail(e),r.appendChild(a)}else{const t=document.createElement
 ;const o=document.createElement("div");
 if("unavailable"===String(e.status||"").toLowerCase()){o.className="scell-na",o.textContent="Not Available"}
 else if(isCourtBlocked(e,selectedDate,SLOTKEY)){o.className="scell-blocked",o.textContent="Blocked",
+(function(){const nt=noteFor(e.id,selectedDate,SLOTKEY);if(nt){o.title=nt;const d=document.createElement("div");d.textContent=nt;d.style.cssText="font-size:10.5px;opacity:.85;margin-top:2px;white-space:normal;line-height:1.3;font-weight:600";o.appendChild(d)}})(),
 o.style.cursor="pointer",o.onclick=ev=>openSlotMenu(ev,e,SLOTKEY,!0)}
 else{o.className="scell-open",o.textContent="Open",
 o.style.cursor="pointer",o.onclick=ev=>openSlotMenu(ev,e,SLOTKEY,!1)}
