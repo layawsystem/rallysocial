@@ -878,7 +878,7 @@ try{renderCourtStatus()}catch(e){}
 try{renderSchedHead();renderGrid()}catch(e){}
 if(CAV_COURT){var fresh=COURTS.find(function(c){return c.id===CAV_COURT.id});if(fresh){CAV_COURT=fresh;try{renderCavStatus();renderCavBlocks();if($("cavDate").value)renderCavSlots()}catch(e){}}}
 },function(e){console.warn("courts watch:",e)})}
-function watchDay(){dayUnsub&&dayUnsub(),$("dayTitle").textContent=niceDate(selectedDate),
+function watchDay(){dayUnsub&&dayUnsub(),$("dayTitle").textContent=niceDate(selectedDate),/* block notes are per-date, so refresh them whenever the day changes */loadBlockNotesFor(selectedDate).then(function(){try{renderGrid()}catch(e){}}),
 dayUnsub=db.collection("bookings").where("date","==",selectedDate).onSnapshot(async t=>{DAY=[],t.forEach(t=>DAY.push({
 id:t.id,...t.data()})),DAY.sort((t,e)=>{const n=t.createdAt&&t.createdAt.seconds||0
 ;return(e.createdAt&&e.createdAt.seconds||0)-n});const e=orderGroups(DAY.filter(t=>isLiveBooking(t)));let n=0,a=0
@@ -921,7 +921,14 @@ function renderSchedHead(){const t=$("schedHead");t.innerHTML="";const e=documen
 t.appendChild(n)})}function bkHoldMs(e){return e&&e.holdUntil&&e.holdUntil.toMillis?e.holdUntil.toMillis():0}
 function isLiveBooking(e){if(!e||"cancelled"===e.status)return!1;
 if("reserved"===e.status){const hu=bkHoldMs(e);return!(!hu||hu<Date.now())}return!0}
-function isCourtBlocked(court,date,slotKey){return!!court&&Array.isArray(court.blocks)&&court.blocks.some(b=>b&&b.date===date&&Array.isArray(b.slots)&&b.slots.includes(slotKey))}
+/* Block notes are manager-only, so the staff dashboard can read them. Keyed
+   courtId__date to match how the owner writes them. */
+var BLOCK_NOTES={}
+;async function loadBlockNotesFor(date){try{
+const snap=await db.collection("courtBlockNotes").where("date","==",date).get()
+;BLOCK_NOTES={};snap.forEach(function(d){var t=d.data();if(t&&t.courtId)BLOCK_NOTES[t.courtId+"__"+t.date]=t.note||""})}
+catch(e){console.warn("block notes load failed",e)}}
+;function isCourtBlocked(court,date,slotKey){return!!court&&Array.isArray(court.blocks)&&court.blocks.some(b=>b&&b.date===date&&Array.isArray(b.slots)&&b.slots.includes(slotKey))}
 function bkRank(e){return"confirmed"===e.status?3:"pending"===e.status?2:"reserved"===e.status?1:0}
 function renderGrid(){if(!SETTINGS||!COURTS.length)return void($("schedBody").innerHTML="")
 ;const t=buildSlots(),e=Number(SETTINGS.slotMinutes??60),n={};DAY.forEach(t=>{
@@ -937,7 +944,7 @@ a.rowSpan=e.len,a.innerHTML='<div class="nm">'+nameOf(t)+'</div><div class="stt"
 a.onclick=()=>openDetail(t),i.appendChild(a)}else{const e=document.createElement("td");e.className="cell"
 ;const c=document.createElement("div");
 if("unavailable"===String(t.status||"").toLowerCase()){c.className="scell-na",c.textContent="Not Available"}
-else if(isCourtBlocked(t,selectedDate,SLOTKEY)){c.className="scell-blocked",c.textContent="Blocked",
+else if(isCourtBlocked(t,selectedDate,SLOTKEY)){c.className="scell-blocked",c.textContent="Blocked",(function(){var nt=BLOCK_NOTES[t.id+"__"+selectedDate];if(nt){var d=document.createElement("div");d.className="stt";d.textContent=nt;d.style.cssText="font-size:10.5px;opacity:.85;margin-top:2px;white-space:normal;line-height:1.3";c.appendChild(d);c.title=nt}})(),
 c.style.cursor="pointer",c.onclick=ev=>openSlotMenu(ev,t,SLOTKEY,!0)}
 else{c.className="scell-open",c.textContent="Open",
 c.style.cursor="pointer",c.onclick=ev=>openSlotMenu(ev,t,SLOTKEY,!1)}
