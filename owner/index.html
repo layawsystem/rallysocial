@@ -1552,6 +1552,9 @@ if(ex){if(!ex.slots.includes(slotKey))ex.slots.push(slotKey);ex.slots.sort()}
 else next.push({date:selectedDate,slots:[slotKey]})}
 try{await db.collection("courts").doc(court.id).update({blocks:next});
 const idx=COURTS.findIndex(c=>c.id===court.id);if(idx>=0)COURTS[idx].blocks=next;
+/* Opening the last blocked slot of a date leaves the note attached to
+   nothing — clear it so no name lingers. */
+if(blocked&&!next.some(b=>b.date===selectedDate))await saveBlockNote(court.id,selectedDate,"");
 renderCourtStatus();renderSchedHead();renderGrid();
 toast(blocked?"Slot opened.":"Slot blocked.")}
 catch(e){console.error(e),toast("Could not update. Please try again.")}}
