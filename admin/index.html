@@ -531,7 +531,7 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 <label class="cav-mini" style="margin-top:8px">Time slots to block</label>
 <div class="cav-slot-actions" style="display:none"><button id="cavSelectAll" class="cav-linkbtn" type="button">Select all (whole day)</button><button id="cavClearAll" class="cav-linkbtn" type="button">Clear all</button></div>
 <div id="cavSlots" class="cav-slots"><div class="cav-empty">Pick a date first.</div></div>
-<button id="cavAddBlock" class="btn" style="width:100%;margin-top:10px;padding:11px" disabled>Block selected slots</button>
+<label class="cav-mini" style="margin-top:8px">Note &mdash; who is this for? (optional)</label><input type="text" id="cavNote" class="fld-input" placeholder="e.g. Coach Rey clinic, Ana Duque"/><div class="cav-hint">Only you and the owner can see this. Players never do.</div><button id="cavAddBlock" class="btn" style="width:100%;margin-top:10px;padding:11px" disabled>Block selected slots</button>
 </div>
 <div class="cav-section">
 <div class="cav-label">Bulk: block a date range</div>
@@ -542,7 +542,7 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 <div class="cav-slot-actions" style="margin-top:10px"><button id="cavBulkSelectAll" class="cav-linkbtn" type="button">Select all (whole day)</button><button id="cavBulkClearAll" class="cav-linkbtn" type="button">Clear all</button></div>
 <div id="cavBulkSlots" class="cav-slots"></div>
 <div style="display:flex;gap:10px;margin-top:10px">
-<button id="cavBulkBlock" class="btn" style="flex:1;padding:11px" disabled>Block range</button>
+</div><label class="cav-mini">Note &mdash; who is this for? (optional)</label><input type="text" id="cavBulkNote" class="fld-input" placeholder="e.g. League night"/><div style="display:flex;gap:10px;margin-top:10px"><button id="cavBulkBlock" class="btn" style="flex:1;padding:11px" disabled>Block range</button>
 <button id="cavBulkUnblock" class="btn-ghost" style="flex:1;padding:11px" disabled>Unblock range</button>
 </div>
 <div class="cav-hint">Applies to every day from start to end date (inclusive).</div>
@@ -698,9 +698,13 @@ var c=document.createElement("div");c.className="court-card";
 c.innerHTML='<div class="ci">'+IC_COURT+'</div><div class="cn">'+esc(o.name)+'</div><div class="ct">'+(ty?"("+esc(ty)+")":"&nbsp;")+'</div><span class="pill '+s+'">'+r+'</span><div class="toggle-hint">Tap to manage availability</div>';
 c.onclick=function(){openCourtModal(o)};e.appendChild(c)})}
 let CAV_COURT=null;
-function openCourtModal(court){CAV_COURT=court;
+async function loadBlockNotesForCourt(courtId){try{
+const snap=await db.collection("courtBlockNotes").where("courtId","==",courtId).get()
+;snap.forEach(function(d){var t=d.data();if(t&&t.date)BLOCK_NOTES[t.courtId+"__"+t.date]=t.note||""})}
+catch(e){console.warn("block notes load failed",e)}}
+;function openCourtModal(court){CAV_COURT=court;
 $("courtModalTitle").textContent=court.name+(court.type?" ("+court.type+")":"");
-renderCavStatus();$("cavDate").value="";renderCavSlots();renderCavBlocks();
+renderCavStatus();$("cavDate").value="";$("cavNote").value="";$("cavBulkNote").value="";renderCavSlots();renderCavBlocks();loadBlockNotesForCourt(court.id).then(renderCavBlocks);
 $("cavBulkStart").value="";$("cavBulkEnd").value="";renderBulkSlots();
 $("courtOverlay").classList.add("show")}
 function closeCourtModal(){$("courtOverlay").classList.remove("show");CAV_COURT=null}
@@ -711,19 +715,21 @@ const bl=courtBlocks().slice();const existing=bl.find(b=>b.date===d);
 if(existing){existing.slots=[...new Set([...(existing.slots||[]),...picked])].sort()}
 else bl.push({date:d,slots:picked.slice().sort()});
 const ok=await saveCourtField({blocks:bl});
-if(ok){renderCavSlots();renderCavBlocks();toast("Slots blocked for "+niceD(d)+".")}}
+if(ok){const nt=$("cavNote").value;if(nt&&nt.trim()&&CAV_COURT)await saveBlockNote(CAV_COURT.id,d,nt);
+$("cavNote").value="";renderCavSlots();renderCavBlocks();toast("Slots blocked for "+niceD(d)+".")}}
 async function cavToggleOverall(){const un="unavailable"===String(CAV_COURT.status||"").toLowerCase();
 const ok=await saveCourtField({status:un?"":"unavailable"});
 if(ok){renderCavStatus();toast(un?"Court marked available.":"Court marked not available.")}}
 async function removeBlock(date){const bl=courtBlocks().filter(b=>b.date!==date);
 const ok=await saveCourtField({blocks:bl});
-if(ok){renderCavSlots();renderCavBlocks();toast("Block removed.")}}
+if(ok){if(CAV_COURT)await saveBlockNote(CAV_COURT.id,date,"");
+renderCavSlots();renderCavBlocks();toast("Block removed.")}}
 function renderCavBlocks(){const wrap=$("cavBlockList"),bl=courtBlocks();
 if(!bl.length){wrap.innerHTML='<div class="cav-empty">No blocks set.</div>';return}
 wrap.innerHTML="";bl.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(b=>{
 const item=document.createElement("div");item.className="cav-block-item";
 const slots=(b.slots||[]).slice().sort().map(sl=>hourLabel(hm2min(sl))).join(", ");
-item.innerHTML='<div class="bd"><strong>'+esc(niceD(b.date))+'</strong><br>'+esc(slots)+'</div>';
+item.innerHTML='<div class="bd"><strong>'+esc(niceD(b.date))+'</strong><br>'+esc(slots)+'<input type="text" class="blk-note" data-date="'+esc(b.date)+'" placeholder="Note — who is this for?" value="'+esc(BLOCK_NOTES[(CAV_COURT?CAV_COURT.id:"")+"__"+b.date]||"")+'" style="width:100%;margin-top:7px;padding:7px 9px;font:inherit;font-size:12.5px;border:1px solid var(--input-line);border-radius:8px;background:var(--input-bg);color:var(--text)"/>'+'</div>';const ni=item.querySelector(".blk-note");if(ni)ni.onchange=async()=>{if(CAV_COURT)await saveBlockNote(CAV_COURT.id,b.date,ni.value),toast("Note saved.")};
 const x=document.createElement("button");x.className="bx";x.textContent="Remove";
 x.onclick=()=>removeBlock(b.date);item.appendChild(x);wrap.appendChild(item)})}
 async function saveCourtField(patch){if(!CAV_COURT||!CAV_COURT.id)return!1;
@@ -763,7 +769,9 @@ async function cavBulkBlock(){const dates=bulkDates();if(!dates.length)return to
 const picked=[...$("cavBulkSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k);if(!picked.length)return;
 const bl=courtBlocks().slice();dates.forEach(d=>{let ex=bl.find(b=>b.date===d);
 if(ex)ex.slots=[...new Set([...(ex.slots||[]),...picked])].sort();else bl.push({date:d,slots:picked.slice().sort()})});
-const ok=await saveCourtField({blocks:bl});if(ok){renderCavSlots(),renderCavBlocks();toast("Blocked "+dates.length+" day(s).")}}
+const ok=await saveCourtField({blocks:bl});if(ok){const nt=$("cavBulkNote").value;
+if(nt&&nt.trim()&&CAV_COURT)for(const d of dates)await saveBlockNote(CAV_COURT.id,d,nt);
+$("cavBulkNote").value="";renderCavSlots(),renderCavBlocks();toast("Blocked "+dates.length+" day(s).")}}
 async function cavBulkUnblock(){const dates=new Set(bulkDates());if(!dates.size)return toast("Check your dates.");
 const picked=new Set([...$("cavBulkSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k));if(!picked.size)return;
 let bl=courtBlocks().map(b=>{if(!dates.has(b.date))return b;
