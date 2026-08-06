@@ -626,9 +626,17 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 /* While a modal is open the page behind must not move. */
 body.layaw-modal-open{overflow:hidden;position:relative}
 /* Two date inputs side by side do not fit a narrow phone. */
+/* Flex children default to min-width:auto, so the Start/End date row refused
+   to shrink and the End date input sat ~67px past the modal's right edge on a
+   375px screen. Everything inside a modal is allowed to shrink, and the row
+   wraps rather than overflow. */
+.modal div,.modal label{min-width:0}
+.modal input,.modal select,.modal textarea,.modal .fld-input{
+  max-width:100%;box-sizing:border-box;min-width:0
+}
+.modal [style*="display:flex"]{flex-wrap:wrap}
 @media (max-width:430px){
-  .cav-section input[type="date"]{min-width:0;width:100%}
-  .cav-section .fld-input{min-width:0}
+  .cav-section input[type="date"],.cav-section .fld-input{width:100%}
 }
 </style></head> <body> <div id="loginView" class="login-wrap" style="display:none"> <div class="login-card"> <div class="brand">
 <img id="loginLogo" alt="" style="display:none"/>
