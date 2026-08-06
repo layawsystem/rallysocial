@@ -470,7 +470,19 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
   .card,.modal,.modal-box,.modal-doc,.login-card,.notif,.stat,.kpi,.sidebar{background:#141416}
 }
 /* ════════════════════ END LAYAW GLASS THEME ════════════════════ */
-</style> <style>/* LAYAW-NATIVE-CONTROLS */:root{color-scheme:dark}select option,select optgroup{background:#16161B;color:#EAE6DE}</style></head> <body> <div id="loginView" class="login-wrap" style="display:none"> <div class="login-card"> <div class="brand">
+</style> <style>/* LAYAW-NATIVE-CONTROLS */:root{color-scheme:dark}select option,select optgroup{background:#16161B;color:#EAE6DE}</style><style>/* LAYAW-MODAL-MOBILE */
+.overlay{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.overlay.show{place-items:start center}
+@media (min-height:820px){.overlay.show{place-items:center}}
+.modal{max-height:none;margin:auto 0;overscroll-behavior:contain}
+@supports (height:100dvh){.modal{max-height:calc(100dvh - 32px)}}
+.modal *{overscroll-behavior:contain}
+body.layaw-modal-open{overflow:hidden;position:relative}
+@media (max-width:430px){
+  .cav-section input[type="date"]{min-width:0;width:100%}
+  .cav-section .fld-input{min-width:0}
+}
+</style></head> <body> <div id="loginView" class="login-wrap" style="display:none"> <div class="login-card"> <div class="brand">
 <img id="loginLogo" alt="" style="display:none"/>
 <div>
 <div class="eyebrow">Admin access</div>
@@ -508,7 +520,7 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 </table>
 </div> </div> </div> </div> </div>
 <div class="card cs-card" style="margin-top:16px">
-<div class="view-head" style="display:flex;align-items:center;gap:12px"><h3>Court Status</h3><button id="multiCourtBtn" class="btn" style="width:auto;flex:none;margin-left:auto;padding:9px 15px;font-size:12.5px;white-space:nowrap">Block multiple courts</button></div>
+<div class="view-head" style="display:flex;align-items:center;gap:12px"><h3>Court Status</h3><span style="font-size:11.5px;color:var(--muted);margin-left:10px;font-weight:600">right now</span><button id="multiCourtBtn" class="btn" style="width:auto;flex:none;margin-left:auto;padding:9px 15px;font-size:12.5px;white-space:nowrap">Block multiple courts</button></div>
 <div id="courtStatus" class="court-status-grid"></div>
 </div>
 </div>
@@ -690,9 +702,12 @@ function adminEmail(t){const e=adminSlug(t);return e?e+"@courtadmin.app":""}asyn
 await loadBase();const t=today();viewYear=t.getFullYear(),viewMonth=t.getMonth(),selectedDate=dstr(t),
 renderCalendar(),renderSchedHead(),watchDay(),watchPending(),renderCourtStatus(),watchCourts(),startExpiryRefresh()}function esc(x){return String(x==null?"":x).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 var IC_COURT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>';
+function slotKeyNow(){var n=Number((SETTINGS&&SETTINGS.slotMinutes)||60),d=new Date(),m=60*d.getHours()+d.getMinutes(),st=Math.floor(m/n)*n;return String(Math.floor(st/60)).padStart(2,"0")+":"+String(st%60).padStart(2,"0")}
 function renderCourtStatus(){var e=$("courtStatus");if(!e)return;if(!COURTS.length){e.innerHTML='<div class="empty" style="color:var(--muted);font-size:13px">No courts set up yet.</div>';return}
 e.innerHTML="";COURTS.forEach(function(o){var un="unavailable"===String(o.status||"").toLowerCase();
 var s=un?"na":"avail",r=un?"Not Available":"Available";
+/* A block covering this minute is not "Available" either. */
+if(!un&&isCourtBlocked(o,dstr(today()),slotKeyNow()))s="maint",r="Blocked";
 var ty=o.type?o.type.charAt(0).toUpperCase()+o.type.slice(1):"";
 var c=document.createElement("div");c.className="court-card";
 c.innerHTML='<div class="ci">'+IC_COURT+'</div><div class="cn">'+esc(o.name)+'</div><div class="ct">'+(ty?"("+esc(ty)+")":"&nbsp;")+'</div><span class="pill '+s+'">'+r+'</span><div class="toggle-hint">Tap to manage availability</div>';
@@ -1124,4 +1139,15 @@ changeGiven:s-o,createdAt:firebase.firestore.FieldValue.serverTimestamp()}),awai
 ;m.forEach(t=>p.update(t,{status:"confirmed"})),await p.commit(),$("walkOverlay").classList.remove("show"),
 toast("Walk-in confirmed · "+peso(o)+" cash · change "+peso(s-o))}catch(t){console.error(t),
 $("walkErr").textContent="Could not save the booking. Please try again."}finally{i.disabled=!1,
-i.textContent="Confirm & Save"}},loadBase()</script> </body> </html>
+i.textContent="Confirm & Save"}},loadBase()</script> <script>/* LAYAW-MODAL-MOBILE */
+(function(){
+  function anyOpen(){return !!document.querySelector(".overlay.show, .modal-overlay.show")}
+  function sync(){document.body.classList.toggle("layaw-modal-open", anyOpen())}
+  try{
+    new MutationObserver(sync).observe(document.documentElement,
+      {subtree:true, attributes:true, attributeFilter:["class"]});
+    document.addEventListener("DOMContentLoaded", sync);
+    sync();
+  }catch(e){}
+})();
+</script></body> </html>
