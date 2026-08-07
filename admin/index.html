@@ -490,6 +490,36 @@ body.layaw-modal-open{overflow:hidden;position:relative}
 @media (max-width:430px){
   .cav-section input[type="date"],.cav-section .fld-input{width:100%}
 }
+</style><style>/* LAYAW-MOBILE-FIX-2 */
+/* Sticky cells must be opaque. backdrop-filter is not dependable on sticky
+   table cells in iOS Safari, and at .82 alpha the cells scrolling underneath
+   read straight through the time column. */
+table.slots thead th,table.sched thead th,
+table.slots .time-cell,table.sched td.time-cell{
+  background:#141416;
+  -webkit-backdrop-filter:none;backdrop-filter:none
+}
+@media (max-width:640px){
+  /* Three stat tiles across a phone leaves ~107px each; grid items will not
+     shrink below their content, so the amounts burst out of the card. */
+  .stats{grid-template-columns:1fr 1fr;gap:10px}
+  .stat{padding:12px 14px;min-width:0}
+  .stat .n{font-size:20px}
+  .stat .l{font-size:11.5px}
+  /* A two-up form gives each field ~150px on a 375px screen. */
+  .form-grid{grid-template-columns:1fr}
+  /* Fixed minimums on a flex row cannot fit; let the row wrap instead. */
+  .recent-row{flex-wrap:wrap}
+  .recent-row .rt,.recent-row .rc{min-width:0}
+  /* Nothing may push the page sideways. */
+  .content,.card{min-width:0}
+}
+@media (max-width:360px){
+  .stats{grid-template-columns:1fr}
+  /* Title plus a right-hand link will not fit on the narrowest phones. */
+  .card-head{flex-wrap:wrap;gap:8px}
+  .card-head h3{min-width:0}
+}
 </style></head> <body> <div id="loginView" class="login-wrap" style="display:none"> <div class="login-card"> <div class="brand">
 <img id="loginLogo" alt="" style="display:none"/>
 <div>
@@ -1157,5 +1187,24 @@ i.textContent="Confirm & Save"}},loadBase()</script> <script>/* LAYAW-MODAL-MOBI
     document.addEventListener("DOMContentLoaded", sync);
     sync();
   }catch(e){}
+})();
+</script><script>/* LAYAW-BUILD-STAMP */
+(function(){
+  /* So the build a phone has loaded can be read off the screen. */
+  var B = "2026-08-07a";
+  document.documentElement.setAttribute("data-build", B);
+  try{ console.log("LAYAW build " + B); }catch(e){}
+  function stamp(){
+    var side = document.querySelector(".sidebar");
+    if(!side || side.querySelector(".layaw-build")) return;
+    var d = document.createElement("div");
+    d.className = "layaw-build";
+    d.textContent = "build " + B;
+    d.style.cssText = "margin-top:auto;padding:10px 16px;font-size:10.5px;"
+      + "opacity:.45;letter-spacing:.04em";
+    side.appendChild(d);
+  }
+  document.addEventListener("DOMContentLoaded", stamp);
+  stamp();
 })();
 </script></body> </html>
