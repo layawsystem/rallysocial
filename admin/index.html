@@ -476,7 +476,12 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 @media (min-height:820px){.overlay.show{place-items:center}}
 .modal{max-height:none;margin:auto 0;overscroll-behavior:contain}
 @supports (height:100dvh){.modal{max-height:calc(100dvh - 32px)}}
-.modal *{overscroll-behavior:contain}
+/* Only the overlay and the modal trap scrolling. Applying this to every
+   descendant made .table-scroll a dead end: overflow-x:auto forces a computed
+   overflow-y:auto, so it counts as a vertical scroll container with nothing to
+   scroll, and `contain` then stopped the wheel from ever reaching the modal.
+   The slot table fills most of the Walk-in modal, so it would not scroll. */
+.modal .table-scroll{overscroll-behavior-x:contain}
 body.layaw-modal-open{overflow:hidden;position:relative}
 /* Flex children default to min-width:auto, so the Start/End date row refused
    to shrink and the End date input sat ~67px past the modal's right edge on a
@@ -1098,14 +1103,12 @@ $("walkContact").value="",$("walkEmail").value="",$("walkStaff").value=ADMIN_NAM
 $("walkErr").textContent="",
 renderWalkGrid(),updateWalkTotals(),$("walkOverlay").classList.add("show")):toast("Please wait — still loading courts.")
 }function renderWalkGrid(){$("walkHead").innerHTML="<th>Time</th>"+COURTS.map(t=>"<th>"+t.name+"</th>").join("")
-;const t=$("walkBody");t.innerHTML="";const e=new Set;DAY.forEach(t=>{
-"cancelled"!==t.status&&(t.slots||[]).forEach(n=>e.add(t.court+"|"+n))})
+;const t=$("walkBody");t.innerHTML="";const e=new Set;DAY.forEach(t=>{/* Must match the main grid: isLiveBooking() drops a reserved hold whose holdUntil has passed. Counting every non-cancelled doc left abandoned checkouts blocking courts the desk could have sold. */isLiveBooking(t)&&(t.slots||[]).forEach(n=>e.add(t.court+"|"+n))})
 ;const n=selectedDate===dstr(today()),a=60*(new Date).getHours()+(new Date).getMinutes(),o=Number(SETTINGS.slotMinutes??60)
 ;buildSlots().forEach(s=>{const i=document.createElement("tr"),c=document.createElement("td");c.className="time-cell",
 c.textContent=hourLabel(s.mins)+"-"+hourLabel(s.mins+o),i.appendChild(c);const r=n&&s.mins+o<=a;COURTS.forEach(t=>{
 const n=document.createElement("td");n.className="cell book-cell"
-;const a=t.name+"|"+s.key,o=document.createElement("div");r||e.has(a)?(o.className="wcell off",
-o.textContent=r?"Past":"Taken"):walkCart.has(a)?(o.className="wcell sel",o.textContent="Selected",o.onclick=()=>{
+;const a=t.name+"|"+s.key,o=document.createElement("div");/* A court the owner blocked, or marked unavailable, must not be bookable at the desk either. */const bk="unavailable"===String(t.status||"").toLowerCase()||isCourtBlocked(t,selectedDate,s.key);r||e.has(a)||bk?(o.className="wcell off",o.textContent=r?"Past":bk?"Blocked":"Taken"):walkCart.has(a)?(o.className="wcell sel",o.textContent="Selected",o.onclick=()=>{
 walkCart.delete(a),renderWalkGrid(),updateWalkTotals()}):(o.className="wcell open",o.textContent="Open",o.onclick=()=>{
 walkCart.add(a),renderWalkGrid(),updateWalkTotals()}),n.appendChild(o),i.appendChild(n)}),t.appendChild(i)})}
 function updateWalkTotals(){const t=walkCart.size*walkSlotCost();$("walkTotal").textContent=peso(t)
