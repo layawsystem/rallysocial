@@ -702,7 +702,7 @@ body::after{background:radial-gradient(880px 540px at 8% 90%,var(--acc-08),trans
 </div> </div> </div> <div class="toast" id="toast">
 </div> <script>(function(){try{var ua=navigator.userAgent||"";if(/FBAN|FBAV|FB_IAB|Instagram|Messenger|Line\/|Twitter|GSA/i.test(ua)){var b=document.getElementById("iabBanner");if(b){b.style.display="block";var c=document.getElementById("iabClose");if(c)c.onclick=function(){b.style.display="none"}}}}catch(e){}})();
 let db;try{const e=firebase.initializeApp(firebaseConfig);try{
-APPCHECK_SITE_KEY&&0!==APPCHECK_SITE_KEY.indexOf("PASTE_")&&firebase.appCheck(e).activate(APPCHECK_SITE_KEY,!0)
+APPCHECK_SITE_KEY&&0!==APPCHECK_SITE_KEY.indexOf("PASTE_")&&(window.__appCheck=firebase.appCheck(e),window.__appCheck.activate(APPCHECK_SITE_KEY,!0))
 }catch(e){console.warn("AppCheck:",e)}db=firebase.firestore();try{db.enablePersistence({synchronizeTabs:!0}).catch(function(){})}catch(e){}}catch(e){
 showError("Could not connect. Check the Firebase config at the top of this file.")}
 let viewYear,viewMonth,SETTINGS=null,COURTS=[],RATES=[],PROMOS=[],appliedPromo=null,selectedDate=null,cart=new Set,bookedSet=new Set,pendingSet=new Set,availUnsub=null,chosenPayment=null,receiptData=null,holdTimer=null,holdDeadline=0,reservedIds=[],reservedLockIds=[],reservedBookingId=null,releasingBookingId=null,reserving=!1,availReady=!1,availDate=null
@@ -759,13 +759,23 @@ return"₱"+Number(e).toLocaleString("en-PH")}function darken(e,t){
 }function ck(e,t,o){return e+"|"+t+"|"+o}
 function isBlocked(court,date,slotKey){return Array.isArray(court.blocks)&&court.blocks.some(b=>b.date===date&&Array.isArray(b.slots)&&b.slots.includes(slotKey))}async function loadData(){if(db)try{
 const _to=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),ms))]);
-const[e,t,rr,pp,ag]=await _to(Promise.all([
+/* A cold load fetches the reCAPTCHA script, runs it, exchanges it for an
+   App Check token and only then opens the first Firestore connection. That
+   chain does not fit in 12s on mobile data, which is why the very first visit
+   always failed and a reload always worked — the reload had a cached token.
+   Wait for the token, then retry once. Only a timeout is retried, so a genuine
+   permission error still surfaces straight away. */
+const _reads=()=>Promise.all([
 db.collection("settings").doc("config").get(),
 db.collection("courts").get(),
 db.collection("rates").get().catch(()=>null),
 db.collection("promos").get().catch(()=>null),
 db.collection("settings").doc("agreement").get().catch(()=>null)
-]),12e3);if(!e.exists)return void showError("Settings not found.")
+]);
+if(window.__appCheck)try{await _to(window.__appCheck.getToken(),1e4)}catch(_){}
+let _rs;try{_rs=await _to(_reads(),12e3)}
+catch(_e){if("timeout"!==_e.message)throw _e;_rs=await _to(_reads(),15e3)}
+const[e,t,rr,pp,ag]=_rs;if(!e.exists)return void showError("Settings not found.")
 ;SETTINGS=e.data();AGREEMENT=(ag&&ag.exists)?ag.data():null;if(COURTS=[],t.forEach(e=>{const t=e.data()
 ;!1!==t.active&&COURTS.push({id:e.id,name:t.name||"Court",status:t.status||"",blocks:Array.isArray(t.blocks)?t.blocks:[]})}),COURTS.sort((e,t)=>e.name.localeCompare(t.name)),
 !COURTS.length)return void showError("No active courts found.");RATES=[];if(rr)rr.forEach(e=>{const t=e.data();let o=hm2min(t.start),n=hm2min(t.end);n<=o&&(n+=1440),RATES.push({start:o,end:n,
