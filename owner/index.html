@@ -622,7 +622,12 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 .modal{max-height:none;margin:auto 0;overscroll-behavior:contain}
 @supports (height:100dvh){.modal{max-height:calc(100dvh - 32px)}}
 /* Anything scrollable inside the modal keeps its scroll to itself. */
-.modal *{overscroll-behavior:contain}
+/* Only the overlay and the modal trap scrolling. Applying this to every
+   descendant made .table-scroll a dead end: overflow-x:auto forces a computed
+   overflow-y:auto, so it counts as a vertical scroll container with nothing to
+   scroll, and `contain` then stopped the wheel from ever reaching the modal.
+   The slot table fills most of the Walk-in modal, so it would not scroll. */
+.modal .table-scroll{overscroll-behavior-x:contain}
 /* While a modal is open the page behind must not move. */
 body.layaw-modal-open{overflow:hidden;position:relative}
 /* Two date inputs side by side do not fit a narrow phone. */
