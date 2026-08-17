@@ -1054,7 +1054,7 @@ table.slots .time-cell,table.sched td.time-cell{
 </div> <h4 style="font-size:14px;color:var(--text);margin:18px 0 10px">Add a staff member</h4> <div class="add-row"> <input type="text" id="newAdminName" placeholder="Staff name"/> <input type="tel" id="newAdminPin" class="pin" placeholder="6-digit PIN" maxlength="6" inputmode="numeric"/> </div> <div class="form-err" id="adminErr">
 </div> <div style="margin-top:12px">
 <button class="act act-confirm" id="addAdminBtn" style="max-width:200px">Add staff</button>
-</div> </div> </div> </section> <section id="sec-participants" class="sec"> <div class="sec-head"><h2>Participants</h2><p>Everyone who has signed the Participant Agreement. They sign once; after that the agreement is skipped at checkout.</p></div> <div class="card"> <div class="card-head"><h3>Signed agreements</h3><span id="partCount" style="margin-left:12px;font-size:12.5px;color:var(--muted)"></span><button class="btn-ghost" id="exportParticipantsBtn" style="margin-left:auto">&#8681; Export CSV</button></div> <input type="search" id="partSearch" placeholder="Search name, email or mobile number" style="width:100%;margin-bottom:14px;border:1px solid var(--input-line);border-radius:10px;padding:11px 12px;font:inherit;background:var(--input-bg);color:var(--text)"/> <div class="table-scroll"> <table class="txn-table" id="partTable"> <thead> <tr><th>Signed</th><th>Name</th><th>Email</th><th>Mobile</th><th>Date of birth</th><th>Address</th><th>Emergency contact</th><th>Version</th></tr> </thead> <tbody id="partBody"> <tr><td class="empty" colspan="8">Loading&hellip;</td></tr> </tbody> </table> </div> <p style="font-size:12.5px;color:var(--muted);margin-top:14px;line-height:1.6">This page holds personal data &mdash; dates of birth, home addresses and emergency contacts. Only you and your staff can see it; it is never shown on the public booking page. Keep exported files somewhere private, and delete them when you no longer need them.</p> </div> </section> <section id="sec-payments" class="sec"> <div class="sec-head">
+</div> </div> </div> </section> <section id="sec-participants" class="sec"> <div class="sec-head"><h2>Participants</h2><p>Everyone who has signed the Participant Agreement &mdash; from the sign-up page or at checkout. They sign once; after that the agreement is skipped at checkout. Click anyone to see their full profile.</p></div> <div class="card"> <div class="card-head"><h3>Signed agreements</h3><span id="partCount" style="margin-left:12px;font-size:12.5px;color:var(--muted)"></span><button class="btn-ghost" id="exportParticipantsBtn" style="margin-left:auto">&#8681; Export CSV</button></div> <input type="search" id="partSearch" placeholder="Search name, email or mobile number" style="width:100%;margin-bottom:14px;border:1px solid var(--input-line);border-radius:10px;padding:11px 12px;font:inherit;background:var(--input-bg);color:var(--text)"/> <div class="table-scroll"> <table class="txn-table" id="partTable"> <thead> <tr><th>Signed</th><th>Name</th><th>Email</th><th>Mobile</th><th>Date of birth</th><th>Address</th><th>Emergency contact</th><th>Version</th><th>Source</th></tr> </thead> <tbody id="partBody"> <tr><td class="empty" colspan="9">Loading&hellip;</td></tr> </tbody> </table> </div> <p style="font-size:12.5px;color:var(--muted);margin-top:14px;line-height:1.6">This page holds personal data &mdash; dates of birth, home addresses and emergency contacts. Only you and your staff can see it; it is never shown on the public booking page. Keep exported files somewhere private, and delete them when you no longer need them.</p> </div> </section> <section id="sec-payments" class="sec"> <div class="sec-head">
 <h2>Payments</h2>
 <p>Sales summary and transaction records from the last 90 days.</p>
 </div> <div class="kpi-grid" id="payKpis">
@@ -1312,22 +1312,53 @@ renderCalendar(),renderSchedHead(),watchDay(),watchPending(),watchCourts(),start
 let PARTICIPANTS=null
 ;function partSignedOn(ts){try{return ts&&ts.toDate?ts.toDate().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):""}catch(e){return""}}
 ;function partEmergency(p){return [p.emergencyName,p.emergencyRelationship,p.emergencyNumber].filter(Boolean).join(" · ")}
+/* The sign-up page's questions, by storage key. Keep the keys identical to
+   QUESTIONS in site/signup/index.html — that page writes them, this one and
+   the CSV read them. Adding a question there means adding one line here.
+   Every answer is an array: a player may tick more than one. */
+;const PART_QUESTIONS=[
+{key:"bringsYou",label:"What brings them here"},
+{key:"heardFrom",label:"Heard about us from",other:"heardFromOther"},
+{key:"interests",label:"Interested in"},
+{key:"goals",label:"Playing goals"}]
+/* Answers join with "; " rather than ", " so a cell full of options still
+   reads as a list of options and not as a run-on sentence. */
+;function partAnswers(p,q){const a=Array.isArray(p[q.key])?p[q.key].filter(Boolean):[]
+;const other=q.other&&p[q.other]?String(p[q.other]).trim():""
+;const out=a.map(v=>"Other"===v&&other?"Other: "+other:v)
+;return out.join("; ")}
+;function partSource(p){return"signup"===p.source?"Sign-up page":"Checkout"}
 ;async function renderParticipants(){const body=$("partBody");if(!body)return
-;body.innerHTML='<tr><td class="empty" colspan="8">Loading…</td></tr>'
+;body.innerHTML='<tr><td class="empty" colspan="9">Loading…</td></tr>'
 ;try{const snap=await db.collection("participants").orderBy("acceptedAt","desc").get()
 ;PARTICIPANTS=[];snap.forEach(d=>PARTICIPANTS.push(Object.assign({_id:d.id},d.data())))}
 catch(e){console.warn("participants load failed",e)
-;body.innerHTML='<tr><td class="empty" colspan="8">Could not load participants. Check your connection and try again.</td></tr>';return}
+;body.innerHTML='<tr><td class="empty" colspan="9">Could not load participants. Check your connection and try again.</td></tr>';return}
 ;drawParticipants()}
 ;function drawParticipants(){const body=$("partBody");if(!body||!PARTICIPANTS)return
 ;const q=(($("partSearch")||{}).value||"").trim().toLowerCase()
 ;const rows=PARTICIPANTS.filter(p=>!q||[p.name,p.email,p.contact].some(v=>String(v||"").toLowerCase().indexOf(q)>=0))
 ;const cnt=$("partCount");if(cnt)cnt.textContent=PARTICIPANTS.length?(q?rows.length+" of "+PARTICIPANTS.length:PARTICIPANTS.length+(1===PARTICIPANTS.length?" person":" people")):""
-;if(!rows.length){body.innerHTML='<tr><td class="empty" colspan="8">'+(PARTICIPANTS.length?"No one matches that search.":"No one has signed the agreement yet.")+'</td></tr>';return}
-;body.innerHTML=rows.map(p=>"<tr><td>"+esc(partSignedOn(p.acceptedAt))+"</td><td>"+esc(p.name||"")
+;if(!rows.length){body.innerHTML='<tr><td class="empty" colspan="9">'+(PARTICIPANTS.length?"No one matches that search.":"No one has signed the agreement yet.")+'</td></tr>';return}
+;body.innerHTML=rows.map(p=>'<tr data-pid="'+esc(p._id)+'" style="cursor:pointer"><td>'+esc(partSignedOn(p.acceptedAt))+"</td><td>"+esc(p.name||"")
 +"</td><td>"+esc(p.email||"")+"</td><td>"+esc(p.contact||"")+"</td><td>"+esc(p.dateOfBirth||"")
 +"</td><td>"+esc(p.address||"")+"</td><td>"+esc(partEmergency(p))+"</td><td>"+esc(p.agreementVersion||"")
-+"</td></tr>").join("")}
++"</td><td>"+esc(partSource(p))+"</td></tr>").join("")
+/* The answers are too long for the table without turning it into a
+   13-column scroll, so the row opens the full profile instead. */
+;body.querySelectorAll("tr[data-pid]").forEach(tr=>{tr.onclick=()=>openParticipant(tr.getAttribute("data-pid"))})}
+;function openParticipant(id){const p=(PARTICIPANTS||[]).find(x=>x._id===id);if(!p)return
+;const row=(lab,val)=>val?'<div class="mrow"><span>'+esc(lab)+":</span> "+esc(val)+"</div>":""
+;const answers=PART_QUESTIONS.map(q=>row(q.label,partAnswers(p,q))).join("")
+;$("detailModal").innerHTML="<h3>"+esc(p.name||"Participant")+"</h3>"
++row("Signed",partSignedOn(p.acceptedAt))+row("Source",partSource(p))
++row("Email",p.email)+row("Mobile",p.contact)+row("Date of birth",p.dateOfBirth)
++row("Address",p.address)+row("Emergency contact",partEmergency(p))
++row("Agreement version",p.agreementVersion)+row("Booking",p.bookingId)
++(answers?'<div class="mrow" style="margin-top:12px;opacity:.7">&mdash;</div>'+answers:"")
++'<div class="modal-actions"><button class="btn-ghost" id="partClose">Close</button></div>'
+;$("detailOverlay").classList.add("show")
+;$("partClose").onclick=()=>$("detailOverlay").classList.remove("show")}
 ;function setActiveNav(e){
 document.querySelectorAll(".nav-item").forEach(e=>e.classList.remove("active")),e&&e.classList.add("active")}
 function closeSidebar(){$("sidebar").classList.remove("open"),$("appBackdrop").classList.remove("show")}
@@ -2020,8 +2051,8 @@ $("promoErr").textContent="Could not save. Make sure the promos rule is added in
 c.textContent="Save promo"}},$("partSearch")&&($("partSearch").oninput=drawParticipants),
 $("exportParticipantsBtn")&&($("exportParticipantsBtn").onclick=()=>{
 if(!PARTICIPANTS||!PARTICIPANTS.length)return toast("Nothing to export yet.")
-;const rows=[["Signed","Name","Email","Mobile","Date of birth","Address","Emergency name","Relationship","Emergency number","Agreement version","Booking ID"]]
-;PARTICIPANTS.forEach(p=>rows.push([partSignedOn(p.acceptedAt),p.name,p.email,p.contact,p.dateOfBirth,p.address,p.emergencyName,p.emergencyRelationship,p.emergencyNumber,p.agreementVersion,p.bookingId]))
+;const rows=[["Signed","Name","Email","Mobile","Date of birth","Address","Emergency name","Relationship","Emergency number","Agreement version","Booking ID","Source"].concat(PART_QUESTIONS.map(q=>q.label))]
+;PARTICIPANTS.forEach(p=>rows.push([partSignedOn(p.acceptedAt),p.name,p.email,p.contact,p.dateOfBirth,p.address,p.emergencyName,p.emergencyRelationship,p.emergencyNumber,p.agreementVersion,p.bookingId,partSource(p)].concat(PART_QUESTIONS.map(q=>partAnswers(p,q)))))
 ;const body=rows.map(r=>r.map(v=>{const t=String(null==v?"":v);return/[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t}).join(",")).join("\n")
 ;const blob=new Blob([body],{type:"text/csv;charset=utf-8;"}),url=URL.createObjectURL(blob),a=document.createElement("a")
 ;a.href=url,a.download=(SETTINGS&&SETTINGS.businessName||"club").replace(/[^a-z0-9]+/gi,"_").toLowerCase()+"_participants.csv"
