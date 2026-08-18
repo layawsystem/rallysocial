@@ -462,6 +462,13 @@ agreementVersion:AGREEMENT.version||"",source:"signup",
 signedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:!0})
 ;await batch.commit()
 
+/* Hand the booking page what it needs so this person never types these three
+   again on this phone. Same key and shape as index.html — only the checkout
+   fields, never the date of birth, address or emergency contact just
+   collected above. Signing up has to save them typing, not only reading. */
+;try{localStorage.setItem("layaw.booker.v1",JSON.stringify(
+{name:name,contact:contact,email:email,savedAt:Date.now()}))}catch(_){}
+
 ;$("app").style.display="none"
 ;$("successTitle").textContent="You're all set!"
 ;$("successMsg").textContent=needsAgreement
