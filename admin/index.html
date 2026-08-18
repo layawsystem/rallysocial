@@ -544,6 +544,19 @@ input[type=date],input[type=time],input[type="datetime-local"],input[type=month]
 /* The picker glyph is drawn dark, which disappears on these dark surfaces. */
 input[type=date]::-webkit-calendar-picker-indicator,
 input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:pointer}
+</style><style>/* LAYAW-DATE-ROW-FIX
+   A start/end date pair shares one row. The columns were flex:1 with the
+   default min-width:auto, so on a phone neither could shrink below the native
+   date control's own width and the row spilled out of the card. Naming the row
+   lets the columns actually shrink, and below 520px they stack — which stops
+   this depending on how wide any particular phone draws its date picker. */
+.date-row{display:flex;gap:10px}
+.date-row>div{flex:1;min-width:0}
+.date-row>div>.fld-input{width:100%}
+@media (max-width:520px){
+  .date-row{display:block}
+  .date-row>div+div{margin-top:10px}
+}
 </style></head> <body> <div id="loginView" class="login-wrap" style="display:none"> <div class="login-card"> <div class="brand">
 <img id="loginLogo" alt="" style="display:none"/>
 <div>
@@ -609,9 +622,9 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 </div>
 <div class="cav-section">
 <div class="cav-label">Bulk: block a date range</div>
-<div style="display:flex;gap:10px">
-<div style="flex:1"><label class="cav-mini">Start date</label><input type="date" id="cavBulkStart" class="fld-input"/></div>
-<div style="flex:1"><label class="cav-mini">End date</label><input type="date" id="cavBulkEnd" class="fld-input"/></div>
+<div class="date-row">
+<div><label class="cav-mini">Start date</label><input type="date" id="cavBulkStart" class="fld-input"/></div>
+<div><label class="cav-mini">End date</label><input type="date" id="cavBulkEnd" class="fld-input"/></div>
 </div>
 <div class="cav-slot-actions" style="margin-top:10px"><button id="cavBulkSelectAll" class="cav-linkbtn" type="button">Select all (whole day)</button><button id="cavBulkClearAll" class="cav-linkbtn" type="button">Clear all</button></div>
 <div id="cavBulkSlots" class="cav-slots"></div>
@@ -649,9 +662,9 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 </div>
 <div class="cav-section">
 <div class="cav-label">Block a date range</div>
-<div style="display:flex;gap:10px">
-<div style="flex:1"><label class="cav-mini">Start date</label><input type="date" id="mcStart" class="fld-input"/></div>
-<div style="flex:1"><label class="cav-mini">End date</label><input type="date" id="mcEnd" class="fld-input"/></div>
+<div class="date-row">
+<div><label class="cav-mini">Start date</label><input type="date" id="mcStart" class="fld-input"/></div>
+<div><label class="cav-mini">End date</label><input type="date" id="mcEnd" class="fld-input"/></div>
 </div>
 <div class="cav-hint" style="margin-top:6px">For a single day, set the same date in both.</div>
 <div class="cav-slot-actions" style="margin-top:10px"><button id="mcSelectAllSlots" class="cav-linkbtn" type="button">Select all (whole day)</button><button id="mcClearSlots" class="cav-linkbtn" type="button">Clear all</button></div>
