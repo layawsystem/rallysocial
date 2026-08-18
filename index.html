@@ -608,6 +608,12 @@ body::after{background:radial-gradient(880px 540px at 8% 90%,var(--acc-08),trans
 .agr-accept{display:flex;gap:11px;align-items:flex-start;margin-top:18px;padding:14px 16px;border:1px solid var(--input-line);border-radius:12px;background:var(--acc-05,rgba(255,255,255,.03));cursor:pointer}
 .agr-accept input{width:19px;height:19px;flex-shrink:0;margin-top:1px;accent-color:var(--green);cursor:pointer}
 .agr-accept span{font-size:13.5px;line-height:1.55;color:var(--text-2)}
+/* LAYAW-BOOKER-PREFILL */
+.note-known{margin-top:10px;border:1px solid var(--ok-bd,rgba(72,167,104,.34));background:var(--ok-bg,rgba(72,167,104,.14));color:var(--ok-tx,#7BD79B);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.55;font-weight:600}
+/* Inline link, but padded out to a thumb-sized target — it is the control
+   that wipes someone's saved details on a shared phone. */
+.linkish{display:inline-block;background:none;border:none;padding:7px 10px;margin:2px 0 0 -4px;font:inherit;font-weight:700;color:var(--link);cursor:pointer;text-decoration:underline;border-radius:8px}
+.linkish:hover{background:var(--acc-12)}
 </style></head> <body> <div id="iabBanner" style="display:none;position:sticky;top:0;z-index:60;background:#0B97A6;color:#fff;padding:12px 16px;font-size:13.5px;line-height:1.5;text-align:center;font-weight:600">For the best experience, open this page in your browser: tap the <strong>&#8942;</strong> or <strong>&hellip;</strong> menu, then choose <strong>&ldquo;Open in browser&rdquo;</strong> (Chrome or Safari).<button id="iabClose" style="margin-left:10px;background:rgba(255,255,255,.25);border:none;color:#fff;border-radius:6px;padding:3px 9px;font-weight:700;cursor:pointer">Got it</button></div> <div class="wrap"> <div class="brand"> <img id="logo" alt="" style="display:none"/> <div>
 <div class="eyebrow" id="bizEyebrow">Pickleball</div>
 <h1 id="bizName">Loading…</h1>
@@ -676,16 +682,18 @@ body::after{background:radial-gradient(880px 540px at 8% 90%,var(--acc-08),trans
 </div> </div> <button class="btn" id="continueBtn" disabled="disabled">Continue</button> <p class="sum-note">Your booking starts as pending until the club confirms it.</p> </div> </div> <div class="footer" id="footerLinks">
 </div> </div> <div id="checkoutView" class="checkout" style="display:none"> <button class="btn-ghost" id="backToSlots" style="margin-top:18px;margin-bottom:16px">‹ Back to slots</button> <div class="timer-bar" id="timerBar"> <span class="tb-ico">⏱️</span> <span class="tb-txt">
 <strong>TIME LEFT TO COMPLETE</strong>Finish your details &amp; payment before the timer ends.</span> <span class="tb-count" id="timerCount">05:00</span> </div> <div class="card"> <h3>Booker information</h3> <div class="field-gap">
-<label class="fl">Full name</label>
-<input type="text" id="nameInput" placeholder="Juan Dela Cruz"/>
-</div> <div class="field-gap">
-<label class="fl">Mobile number</label>
-<input type="tel" id="contactInput" placeholder="09XX XXX XXXX"/>
-</div> <div>
 <label class="fl">Email</label>
 <input type="email" id="emailInput" placeholder="you@email.com" inputmode="email" autocomplete="email"/>
 <div class="sum-note" style="margin-top:6px">We'll send your booking status and confirmation to this email.</div>
-</div> </div> <div class="card" id="agreementCard" style="display:none"> <h3>First time booking with us</h3> <p class="sum-note agr-intro">Please read and accept the Participant Agreement. You only do this once &mdash; next time you book with this email address, we will skip straight to payment.</p> <div id="agreementBody"></div> <p class="agr-scrollnote" id="agrEffective"></p> <div class="field-gap"> <label class="fl">Date of birth</label> <input type="date" id="dobInput"/> </div> <div class="field-gap"> <label class="fl">Home address</label> <input type="text" id="addrInput" placeholder="House/unit, street, barangay, city"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; name</label> <input type="text" id="ecNameInput" placeholder="Full name"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; relationship</label> <input type="text" id="ecRelInput" placeholder="Spouse, parent, sibling, friend"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; mobile number</label> <input type="tel" id="ecNumInput" placeholder="09XX XXX XXXX"/> </div> <label class="agr-accept" for="agrAccept"> <input type="checkbox" id="agrAccept"/> <span>I have read, understood, and voluntarily agree to be bound by this Participant Agreement. I understand it includes a release of liability and an assumption of risk.</span> </label> </div> <div class="card"> <h3>Select a payment method</h3> <p class="sum-note" style="margin:-6px 0 14px">Choose one option below.</p> <div class="pay-methods" id="payMethods">
+<div class="note-known" id="bookerKnown" style="display:none">Welcome back! We already have your agreement on file, so you can go straight to payment.</div>
+</div> <div class="field-gap">
+<label class="fl">Full name</label>
+<input type="text" id="nameInput" placeholder="Juan Dela Cruz" autocomplete="name"/>
+</div> <div>
+<label class="fl">Mobile number</label>
+<input type="tel" id="contactInput" placeholder="09XX XXX XXXX" autocomplete="tel"/>
+<div class="sum-note" id="prefillNote" style="display:none;margin-top:10px">Filled in from your last booking on this device. <button type="button" class="linkish" id="clearBooker">Not you? Clear</button></div>
+</div> </div><div class="card" id="agreementCard" style="display:none"> <h3>First time booking with us</h3> <p class="sum-note agr-intro">Please read and accept the Participant Agreement. You only do this once &mdash; next time you book with this email address, we will skip straight to payment.</p> <div id="agreementBody"></div> <p class="agr-scrollnote" id="agrEffective"></p> <div class="field-gap"> <label class="fl">Date of birth</label> <input type="date" id="dobInput"/> </div> <div class="field-gap"> <label class="fl">Home address</label> <input type="text" id="addrInput" placeholder="House/unit, street, barangay, city"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; name</label> <input type="text" id="ecNameInput" placeholder="Full name"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; relationship</label> <input type="text" id="ecRelInput" placeholder="Spouse, parent, sibling, friend"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; mobile number</label> <input type="tel" id="ecNumInput" placeholder="09XX XXX XXXX"/> </div> <label class="agr-accept" for="agrAccept"> <input type="checkbox" id="agrAccept"/> <span>I have read, understood, and voluntarily agree to be bound by this Participant Agreement. I understand it includes a release of liability and an assumption of risk.</span> </label> </div> <div class="card"> <h3>Select a payment method</h3> <p class="sum-note" style="margin:-6px 0 14px">Choose one option below.</p> <div class="pay-methods" id="payMethods">
 </div> <div class="pay-detail" id="payDetail" style="display:none">
 </div> </div> <div class="card"> <h3>Upload receipt</h3> <p class="sum-note" style="margin:-6px 0 14px">Upload your payment proof. <strong style="color:var(--cancel)">Required.</strong>
 </p> <div class="upload" id="uploadBox"> <div class="big">☁️ Tap to upload image</div> <div class="small">JPG or PNG, max 5MB</div> <img class="preview" id="receiptPreview" style="display:none"/> </div> <input type="file" id="receiptInput" accept="image/*" style="display:none"/> </div> <button class="btn btn-navy" id="submitBtn">Submit Booking</button> <div class="hold-note">🔒 Your slot is held as <strong>Pending</strong>. We'll confirm it shortly after verifying your payment.</div> <div class="footer" id="footerLinks2">
@@ -712,6 +720,39 @@ let viewYear,viewMonth,SETTINGS=null,COURTS=[],RATES=[],PROMOS=[],appliedPromo=n
    address and look up a single participantSignatures document. A hit for the
    CURRENT version means they have already signed and see nothing. */
 ;let AGREEMENT=null,agreementRequired=!1,agreementHash="",agreementCheckedFor=""
+/* ── Remembering the booker on this device ────────────────────────────────
+   Signing up should save people from typing, not just from reading the
+   agreement. It cannot come from Firestore: participants is manager-only on
+   purpose, and the one collection this page may read — participantSignatures
+   — holds no name or number by design. Opening either up would mean anyone
+   who guesses an email learns that person's mobile number, which is not a
+   trade worth making for a filled-in form.
+
+   So the details stay on the phone they were typed on. Nothing leaves the
+   device, no read, no rule change, no cost. It only helps someone booking
+   from their own phone — which is nearly everyone — and the email-first
+   field order below covers the rest.
+
+   Only the three checkout fields are kept. Never the date of birth, home
+   address or emergency contact: those are collected once, for the venue, and
+   have no business sitting in a browser. */
+;const BOOKER_KEY="layaw.booker.v1",BOOKER_TTL_DAYS=180
+;function loadBooker(){try{const raw=localStorage.getItem(BOOKER_KEY);if(!raw)return null
+;const b=JSON.parse(raw);if(!b||!b.email)return null
+/* A phone changes hands. Do not keep offering a stranger's name for ever. */
+;if(b.savedAt&&Date.now()-b.savedAt>864e5*BOOKER_TTL_DAYS){clearBooker();return null}
+;return b}catch(e){return null}}
+;function saveBooker(name,contact,email){try{localStorage.setItem(BOOKER_KEY,
+JSON.stringify({name:name,contact:contact,email:email,savedAt:Date.now()}))}catch(e){}}
+/* localStorage throws, not returns null, when a browser blocks storage —
+   private windows and "block all cookies" both do. Every call is wrapped so
+   the checkout keeps working with the fields simply empty. */
+;function clearBooker(){try{localStorage.removeItem(BOOKER_KEY)}catch(e){}}
+;function prefillBooker(){const b=loadBooker(),note=$("prefillNote");let filled=!1
+;if(b)[["emailInput",b.email],["nameInput",b.name],["contactInput",b.contact]].forEach(pair=>{
+const el=$(pair[0]);if(el&&!el.value&&pair[1]){el.value=pair[1];filled=!0}})
+;if(note)note.style.display=filled?"block":"none"
+;if(filled)refreshAgreementGate()}
 ;async function sha256Hex(str){try{
 const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str))
 ;return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("")
@@ -719,7 +760,7 @@ const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str))
 ;async function refreshAgreementGate(){const card=$("agreementCard");if(!card)return
 ;if(!AGREEMENT||!AGREEMENT.bodyHtml){card.style.display="none";agreementRequired=!1;return}
 ;const email=($("emailInput").value||"").trim().toLowerCase()
-;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){card.style.display="none";agreementRequired=!1;agreementCheckedFor="";return}
+;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){card.style.display="none";agreementRequired=!1;agreementCheckedFor="";setKnown(!1);return}
 ;if(email===agreementCheckedFor)return
 ;agreementCheckedFor=email
 ;const h=await sha256Hex(email);
@@ -731,11 +772,17 @@ agreementHash=h
 ;if(email!==agreementCheckedFor)return
 /* a newer keystroke already superseded this lookup */
 ;agreementRequired=!signed
+/* Email is the first field now, so this answer arrives before they have typed
+   anything else. Saying so out loud is what makes signing up feel worth it —
+   and it discloses nothing new, since showing or hiding the agreement card
+   already told them the same thing. */
+;setKnown(signed)
 ;if(agreementRequired){$("agreementBody").innerHTML=AGREEMENT.bodyHtml
 ;$("agrEffective").textContent=(AGREEMENT.effectiveDate?"Effective "+AGREEMENT.effectiveDate+" · ":"")+"Version "+(AGREEMENT.version||"1.0")
 ;$("agreementBody").scrollTop=0}
 ;card.style.display=agreementRequired?"block":"none"}
-;function resetAgreementFields(){agreementRequired=!1;agreementHash="";agreementCheckedFor=""
+;function setKnown(on){const n=$("bookerKnown");if(n)n.style.display=on?"block":"none"}
+;function resetAgreementFields(){agreementRequired=!1;agreementHash="";agreementCheckedFor="";setKnown(!1)
 ;const c=$("agreementCard");if(c)c.style.display="none"
 ;["dobInput","addrInput","ecNameInput","ecRelInput","ecNumInput"].forEach(id=>{const el=$(id);if(el)el.value=""})
 ;const a=$("agrAccept");if(a)a.checked=!1}
@@ -952,7 +999,7 @@ $("expireOverlay").classList.add("show")}async function goCheckout(){if(0===cart
 ;if(err&&err.__taken)return toast(err.message);console.error(err);return toast("Could not hold your slots. Please try again.")}
 ;reserving=!1;cbtn&&(cbtn.disabled=!1);dbtn&&(dbtn.disabled=!1)
 ;$("app").style.display="none",$("checkoutView").style.display="block",$("mobileBar").style.display="none",
-renderPayMethods(),startHoldTimer(),window.scrollTo({top:0,behavior:"smooth"})}
+prefillBooker(),renderPayMethods(),startHoldTimer(),window.scrollTo({top:0,behavior:"smooth"})}
 /* Atomically reserve the cart's slots. Writes one "reserved" booking doc per court/date
    with a holdUntil = now + hold minutes. The transaction re-reads every affected date and
    rejects if any chosen slot is already taken (confirmed / pending / un-expired reserved). */
@@ -1028,7 +1075,14 @@ window.innerWidth<=1e3&&($("mobileBar").style.display="flex"),$("nameInput").val
 $("emailInput").value="",appliedPromo=null,$("voucherInput")&&($("voucherInput").value=""),setVoucherMsg("",!0),
 $("receiptPreview").style.display="none";resetAgreementFields();const e=$("uploadBox").querySelector(".big")
 ;e&&(e.textContent="☁️ Tap to upload image"),renderGrid(),updateSummary(),renderCalendar(),window.scrollTo({top:0,
-behavior:"smooth"})},$("emailInput").addEventListener("change",refreshAgreementGate),$("emailInput").addEventListener("blur",refreshAgreementGate),$("continueBtn").onclick=goCheckout,$("mbContinue").onclick=goCheckout,
+behavior:"smooth"})},$("emailInput").addEventListener("change",refreshAgreementGate),$("emailInput").addEventListener("blur",refreshAgreementGate),
+/* A phone gets handed around at a venue. One tap has to be enough for the
+   next person to get an empty form, and to stop this device offering the
+   previous booker's details again. */
+$("clearBooker")&&($("clearBooker").onclick=()=>{clearBooker()
+;["nameInput","contactInput","emailInput"].forEach(id=>{const el=$(id);if(el)el.value=""})
+;$("prefillNote").style.display="none",resetAgreementFields(),$("emailInput").focus()}),
+$("continueBtn").onclick=goCheckout,$("mbContinue").onclick=goCheckout,
 /* No unload/pagehide release here, deliberately. releaseReservation() is async
    (a query plus a batch commit); the browser cancels in-flight requests while
    the page unloads, so it never completes. This was tried and measured — the
@@ -1097,6 +1151,7 @@ await db.collection("receipts").doc(r).set({bookingId:r,image:receiptData,
 createdAt:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){console.warn("receipt save failed",e)}
 if(appliedPromo&&appliedPromo.id)try{await db.collection("promos").doc(appliedPromo.id).update({
 usageCount:firebase.firestore.FieldValue.increment(1)})}catch(e){console.warn("promo usage:",e)}
+saveBooker(e,t,o),
 $("checkoutView").style.display="none",$("successView").style.display="block",clearHoldTimer(),cart.clear(),
 appliedPromo=null,$("voucherInput")&&($("voucherInput").value=""),setVoucherMsg("",!0),$("successId").textContent=r,
 $("viewStatusBtn").onclick=()=>{window.location.href="status.html?id="+encodeURIComponent(r)},window.scrollTo({top:0,
