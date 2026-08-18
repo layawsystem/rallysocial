@@ -673,6 +673,26 @@ table.slots .time-cell,table.sched td.time-cell{
   .card-head{flex-wrap:wrap;gap:8px}
   .card-head h3{min-width:0}
 }
+</style><style>/* LAYAW-DATE-INPUT-FIX
+   Native date/time controls size themselves from their own shadow DOM. Left
+   alone they come out narrow beside real inputs, and on iOS Safari the native
+   control keeps a minimum width and ignores width:100% — which is how a date
+   field ends up wider than the card holding it. Clearing the appearance is
+   what makes the declared width apply there. min-width:0 is for flex and grid
+   parents, whose children default to min-width:auto and refuse to shrink. */
+input[type=date],input[type=time],input[type="datetime-local"],input[type=month]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;min-width:0;max-width:100%;
+  /* Without this the control keeps the UA's 13px monospace and reads as a
+     different kind of field from the ones above and below it. */
+  font:inherit;
+  /* appearance:none drops the native box, so restate the height an empty
+     field would otherwise lose on iOS. */
+  min-height:44px;
+}
+/* The picker glyph is drawn dark, which disappears on these dark surfaces. */
+input[type=date]::-webkit-calendar-picker-indicator,
+input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:pointer}
 </style></head> <body> <div id="loginView" class="login-wrap" style="display:none"> <div class="login-card"> <div class="brand">
 <img id="loginLogo" alt="" style="display:none"/>
 <div>
