@@ -634,6 +634,11 @@ input[type=date],input[type=time],input[type="datetime-local"],input[type=month]
 /* The picker glyph is drawn dark, which disappears on these dark surfaces. */
 input[type=date]::-webkit-calendar-picker-indicator,
 input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:pointer}
+</style><style>/* LAYAW-BLOCK-LABEL-FIT
+   A venue can type its own label, and a long one does not overflow the cell —
+   it widens the whole COLUMN, which pushes the grid sideways on a phone. Cap
+   the width and ellipsise; the full text stays in the title attribute. */
+table.slots .cell-inner.cell-blocked{max-width:120px;overflow:hidden;text-overflow:ellipsis}
 </style></head> <body> <div id="iabBanner" style="display:none;position:sticky;top:0;z-index:60;background:#0B97A6;color:#fff;padding:12px 16px;font-size:13.5px;line-height:1.5;text-align:center;font-weight:600">For the best experience, open this page in your browser: tap the <strong>&#8942;</strong> or <strong>&hellip;</strong> menu, then choose <strong>&ldquo;Open in browser&rdquo;</strong> (Chrome or Safari).<button id="iabClose" style="margin-left:10px;background:rgba(255,255,255,.25);border:none;color:#fff;border-radius:6px;padding:3px 9px;font-weight:700;cursor:pointer">Got it</button></div> <div class="wrap"> <div class="brand"> <img id="logo" alt="" style="display:none"/> <div>
 <div class="eyebrow" id="bizEyebrow">Pickleball</div>
 <h1 id="bizName">Loading…</h1>
@@ -824,7 +829,15 @@ return"₱"+Number(e).toLocaleString("en-PH")}function darken(e,t){
 3===(e=String(e).replace("#","")).length&&(e=e.split("").map(e=>e+e).join(""));const o=parseInt(e,16)
 ;return"#"+[Math.round((o>>16&255)*t),Math.round((o>>8&255)*t),Math.round((255&o)*t)].map(e=>("0"+e.toString(16)).slice(-2)).join("")
 }function ck(e,t,o){return e+"|"+t+"|"+o}
-function isBlocked(court,date,slotKey){return Array.isArray(court.blocks)&&court.blocks.some(b=>b.date===date&&Array.isArray(b.slots)&&b.slots.includes(slotKey))}async function loadData(){if(db)try{
+function isBlocked(court,date,slotKey){return Array.isArray(court.blocks)&&court.blocks.some(b=>b.date===date&&Array.isArray(b.slots)&&b.slots.includes(slotKey))}
+/* The venue can put a public word on a blocked slot — "Open Play", "Tournament"
+   and so on — and that word replaces "Booked" here. It lives in courts/{id},
+   which is already world-readable, precisely because it is meant to be seen.
+   The private note stays in courtBlockNotes, manager-only, and never reaches
+   this page: those notes hold real customers' names. */
+function blockLabelFor(court,date,slotKey){if(!Array.isArray(court.blocks))return""
+;const b=court.blocks.find(b=>b.date===date&&Array.isArray(b.slots)&&b.slots.includes(slotKey))
+;return b&&b.labels&&b.labels[slotKey]?String(b.labels[slotKey]):""}async function loadData(){if(db)try{
 const _to=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),ms))]);
 /* A cold load fetches the reCAPTCHA script, runs it, exchanges it for an
    App Check token and only then opens the first Firestore connection. That
@@ -958,8 +971,14 @@ i.textContent=a.label,r.appendChild(i);const s=t&&a.mins+PAST_ALLOWANCE_MIN<=o;C
    care whether it was booked, blocked or the court was off. */
 s?(drop(n),i.className+=" cell-past",i.textContent="Past"):"unavailable"===String(e.status).toLowerCase()?(drop(n),i.className+=" cell-past cell-na",i.textContent="Not Available"):/* A slot the venue blocked is simply unavailable to a player. Showing
    "Blocked" leaked internal state and invited questions; staff still see
-   the real status, and the note, on their own dashboards. */
-isBlocked(e,selectedDate,a.key)?(drop(n),i.className+=" cell-booked",i.textContent="Booked"):availReady?bookedSet.has(o)?(drop(n),i.className+=" cell-booked",
+   the real status, and the note, on their own dashboards.
+   The one exception is a label the venue chose to publish: "Open Play" tells
+   a player something useful, so it is shown, in its own colour so it does not
+   read as somebody else's booking. Unlabelled blocks look like "Booked" as
+   before. */
+isBlocked(e,selectedDate,a.key)?(drop(n),(()=>{const lb=blockLabelFor(e,selectedDate,a.key)
+;i.className+=lb?" cell-blocked":" cell-booked";i.textContent=lb||"Booked"
+;if(lb)i.title=lb})()):availReady?bookedSet.has(o)?(drop(n),i.className+=" cell-booked",
 i.textContent="Booked"):pendingSet.has(o)?(drop(n),i.className+=" cell-pending",
 i.textContent="Pending"):cart.has(n)?(i.className+=" cell-selected",i.textContent="Selected",i.onclick=()=>{
 cart.delete(n),afterCartChange()}):(i.className+=" cell-open",i.textContent="Open",i.onclick=()=>{cart.add(n),
