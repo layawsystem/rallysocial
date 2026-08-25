@@ -618,7 +618,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <label class="cav-mini" style="margin-top:8px">Time slots to block</label>
 <div class="cav-slot-actions" style="display:none"><button id="cavSelectAll" class="cav-linkbtn" type="button">Select all (whole day)</button><button id="cavClearAll" class="cav-linkbtn" type="button">Clear all</button></div>
 <div id="cavSlots" class="cav-slots"><div class="cav-empty">Pick a date first.</div></div>
-<label class="cav-mini" style="margin-top:8px">Note &mdash; who is this for? (optional)</label><input type="text" id="cavNote" class="fld-input" placeholder="e.g. Coach Rey clinic, Ana Duque"/><div class="cav-hint">Only you and the owner can see this. Players never do.</div><button id="cavAddBlock" class="btn" style="width:100%;margin-top:10px;padding:11px" disabled>Block selected slots</button>
+<label class="cav-mini" style="margin-top:8px">Show on booking page (optional)</label><select id="cavLabel" class="fld-input"><option value="">Nothing &mdash; looks like a normal booking</option><option>Open Play</option><option>Tournament</option><option>Private Event</option><option>Maintenance</option><option value="__other">Other&hellip;</option></select><input type="text" id="cavLabelOther" class="fld-input" maxlength="22" placeholder="Type what players should see" style="display:none;margin-top:6px"/><div class="cav-hint">Players see this instead of &ldquo;Booked&rdquo;. The note below stays private.</div><label class="cav-mini" style="margin-top:8px">Note &mdash; who is this for? (optional)</label><input type="text" id="cavNote" class="fld-input" placeholder="e.g. Coach Rey clinic, Ana Duque"/><div class="cav-hint">Only you and the owner can see this. Players never do.</div><button id="cavAddBlock" class="btn" style="width:100%;margin-top:10px;padding:11px" disabled>Block selected slots</button>
 </div>
 <div class="cav-section">
 <div class="cav-label">Bulk: block a date range</div>
@@ -629,7 +629,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <div class="cav-slot-actions" style="margin-top:10px"><button id="cavBulkSelectAll" class="cav-linkbtn" type="button">Select all (whole day)</button><button id="cavBulkClearAll" class="cav-linkbtn" type="button">Clear all</button></div>
 <div id="cavBulkSlots" class="cav-slots"></div>
 <div style="display:flex;gap:10px;margin-top:10px">
-</div><label class="cav-mini">Note &mdash; who is this for? (optional)</label><input type="text" id="cavBulkNote" class="fld-input" placeholder="e.g. League night"/><div style="display:flex;gap:10px;margin-top:10px"><button id="cavBulkBlock" class="btn" style="flex:1;padding:11px" disabled>Block range</button>
+</div><label class="cav-mini" style="margin-top:0">Show on booking page (optional)</label><select id="cavBulkLabel" class="fld-input"><option value="">Nothing &mdash; looks like a normal booking</option><option>Open Play</option><option>Tournament</option><option>Private Event</option><option>Maintenance</option><option value="__other">Other&hellip;</option></select><input type="text" id="cavBulkLabelOther" class="fld-input" maxlength="22" placeholder="Type what players should see" style="display:none;margin-top:6px"/><div class="cav-hint">Players see this instead of &ldquo;Booked&rdquo;. The note below stays private.</div><label class="cav-mini">Note &mdash; who is this for? (optional)</label><input type="text" id="cavBulkNote" class="fld-input" placeholder="e.g. League night"/><div style="display:flex;gap:10px;margin-top:10px"><button id="cavBulkBlock" class="btn" style="flex:1;padding:11px" disabled>Block range</button>
 <button id="cavBulkUnblock" class="btn-ghost" style="flex:1;padding:11px" disabled>Unblock range</button>
 </div>
 <div class="cav-hint">Applies to every day from start to end date (inclusive).</div>
@@ -641,7 +641,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <button class="btn-ghost" id="courtModalClose" style="width:100%;margin-top:6px;padding:13px">Done</button>
 </div>
 </div>
-<div id="slotMenu" class="slot-menu"><div class="slot-menu-head" id="slotMenuHead"></div><div style="padding:2px 12px 10px"><input type="text" id="slotMenuNote" placeholder="Note &mdash; who is this for?" style="width:100%;padding:8px 10px;font:inherit;font-size:12.5px;border:1px solid var(--input-line);border-radius:8px;background:var(--input-bg);color:var(--text)"/><div style="font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.35">Staff only. Players never see this.</div></div><button class="slot-menu-item" id="slotMenuToggle"></button><button class="slot-menu-item" id="slotMenuMulti">Block multiple slots…</button><button class="slot-menu-item slot-menu-cancel" id="slotMenuCancel">Cancel</button></div>
+<div id="slotMenu" class="slot-menu"><div class="slot-menu-head" id="slotMenuHead"></div><div style="padding:2px 12px 10px"><select id="slotMenuLabel" style="width:100%;padding:8px 10px;margin-bottom:6px;font:inherit;font-size:12.5px;border:1px solid var(--input-line);border-radius:8px;background:var(--input-bg);color:var(--text)"><option value="">Show nothing to players</option><option>Open Play</option><option>Tournament</option><option>Private Event</option><option>Maintenance</option></select><input type="text" id="slotMenuNote" placeholder="Note &mdash; who is this for?" style="width:100%;padding:8px 10px;font:inherit;font-size:12.5px;border:1px solid var(--input-line);border-radius:8px;background:var(--input-bg);color:var(--text)"/><div style="font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.35">Staff only. Players never see this.</div></div><button class="slot-menu-item" id="slotMenuToggle"></button><button class="slot-menu-item" id="slotMenuMulti">Block multiple slots…</button><button class="slot-menu-item slot-menu-cancel" id="slotMenuCancel">Cancel</button></div>
 <div class="overlay" id="multiCourtOverlay">
 <div class="modal" style="max-width:520px;max-height:88vh;overflow-y:auto">
 <h3 style="margin-bottom:4px">Block multiple courts</h3>
@@ -668,7 +668,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 </div>
 <div class="cav-hint" style="margin-top:6px">For a single day, set the same date in both.</div>
 <div class="cav-slot-actions" style="margin-top:10px"><button id="mcSelectAllSlots" class="cav-linkbtn" type="button">Select all (whole day)</button><button id="mcClearSlots" class="cav-linkbtn" type="button">Clear all</button></div>
-<div id="mcSlots" class="cav-slots"></div>
+<div id="mcSlots" class="cav-slots"></div><label class="cav-mini" style="margin-top:8px">Show on booking page (optional)</label><select id="mcLabel" class="fld-input"><option value="">Nothing &mdash; looks like a normal booking</option><option>Open Play</option><option>Tournament</option><option>Private Event</option><option>Maintenance</option><option value="__other">Other&hellip;</option></select><input type="text" id="mcLabelOther" class="fld-input" maxlength="22" placeholder="Type what players should see" style="display:none;margin-top:6px"/><div class="cav-hint">Players see this instead of &ldquo;Booked&rdquo;. The note below stays private.</div>
 <div style="display:flex;gap:10px;margin-top:10px">
 <button id="mcBlock" class="btn" style="flex:1;padding:11px" disabled>Block</button>
 <button id="mcUnblock" class="btn-ghost" style="flex:1;padding:11px" disabled>Unblock</button>
@@ -800,20 +800,21 @@ c.onclick=function(){openCourtModal(o)};e.appendChild(c)})}
 let CAV_COURT=null;
 function openCourtModal(court){CAV_COURT=court;
 $("courtModalTitle").textContent=court.name+(court.type?" ("+court.type+")":"");
-renderCavStatus();$("cavDate").value="";$("cavNote").value="";$("cavBulkNote").value="";renderCavSlots();renderCavBlocks();loadBlockNotesForCourt(court.id).then(renderCavBlocks);
+renderCavStatus();$("cavDate").value="";$("cavNote").value="";$("cavBulkNote").value="";wireLabelPicker("cavLabel","cavLabelOther");wireLabelPicker("cavBulkLabel","cavBulkLabelOther");wireLabelPicker("mcLabel","mcLabelOther");resetLabelPicker("cavLabel","cavLabelOther");resetLabelPicker("cavBulkLabel","cavBulkLabelOther");renderCavSlots();renderCavBlocks();loadBlockNotesForCourt(court.id).then(renderCavBlocks);
 $("cavBulkStart").value="";$("cavBulkEnd").value="";renderBulkSlots();
 $("courtOverlay").classList.add("show")}
 function closeCourtModal(){$("courtOverlay").classList.remove("show");CAV_COURT=null}
 async function cavAddBlock(){const d=$("cavDate").value;if(!d)return;
 const picked=[...$("cavSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k);
 if(!picked.length)return;
-const bl=courtBlocks().slice();const existing=bl.find(b=>b.date===d);
-if(existing){existing.slots=[...new Set([...(existing.slots||[]),...picked])].sort()}
-else bl.push({date:d,slots:picked.slice().sort()});
+const lab=labelValue("cavLabel","cavLabelOther");
+const bl=courtBlocks().map(blkEntry);const existing=bl.find(b=>b.date===d);
+if(existing){existing.slots=[...new Set([...(existing.slots||[]),...picked])].sort();blkSetLabels(existing,picked,lab)}
+else bl.push(blkSetLabels({date:d,slots:picked.slice().sort(),labels:{}},picked,lab));
 const ok=await saveCourtField({blocks:bl});
 if(ok){const nt=$("cavNote").value;
 if(nt&&nt.trim()&&CAV_COURT)for(const sl of picked)await saveBlockNote(CAV_COURT.id,d,sl,nt);
-$("cavNote").value="";renderCavSlots();renderCavBlocks();toast("Slots blocked for "+niceD(d)+".")}}
+$("cavNote").value="";resetLabelPicker("cavLabel","cavLabelOther");renderCavSlots();renderCavBlocks();toast("Slots blocked for "+niceD(d)+".")}}
 async function cavToggleOverall(){const un="unavailable"===String(CAV_COURT.status||"").toLowerCase();
 const ok=await saveCourtField({status:un?"":"unavailable"});
 if(ok){renderCavStatus();toast(un?"Court marked available.":"Court marked not available.")}}
@@ -864,15 +865,17 @@ const out=[],d=new Date(s+"T00:00:00"),end=new Date(e+"T00:00:00");if(end<d)retu
 let guard=0;while(d<=end&&guard<400){out.push(d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()));d.setDate(d.getDate()+1);guard++}return out}
 async function cavBulkBlock(){const dates=bulkDates();if(!dates.length)return toast("Check your dates.");
 const picked=[...$("cavBulkSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k);if(!picked.length)return;
-const bl=courtBlocks().slice();dates.forEach(d=>{let ex=bl.find(b=>b.date===d);
-if(ex)ex.slots=[...new Set([...(ex.slots||[]),...picked])].sort();else bl.push({date:d,slots:picked.slice().sort()})});
+const lab=labelValue("cavBulkLabel","cavBulkLabelOther");
+const bl=courtBlocks().map(blkEntry);dates.forEach(d=>{let ex=bl.find(b=>b.date===d);
+if(ex){ex.slots=[...new Set([...(ex.slots||[]),...picked])].sort();blkSetLabels(ex,picked,lab)}
+else bl.push(blkSetLabels({date:d,slots:picked.slice().sort(),labels:{}},picked,lab))});
 const ok=await saveCourtField({blocks:bl});if(ok){const nt=$("cavBulkNote").value;
 if(nt&&nt.trim()&&CAV_COURT)for(const d of dates)for(const sl of picked)await saveBlockNote(CAV_COURT.id,d,sl,nt);
-$("cavBulkNote").value="";renderCavSlots(),renderCavBlocks();toast("Blocked "+dates.length+" day(s).")}}
+$("cavBulkNote").value="";resetLabelPicker("cavBulkLabel","cavBulkLabelOther");renderCavSlots(),renderCavBlocks();toast("Blocked "+dates.length+" day(s).")}}
 async function cavBulkUnblock(){const dates=new Set(bulkDates());if(!dates.size)return toast("Check your dates.");
 const picked=new Set([...$("cavBulkSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k));if(!picked.size)return;
-let bl=courtBlocks().map(b=>{if(!dates.has(b.date))return b;
-return{date:b.date,slots:(b.slots||[]).filter(sl=>!picked.has(sl))}}).filter(b=>(b.slots||[]).length>0);
+let bl=courtBlocks().map(b=>{if(!dates.has(b.date))return blkEntry(b);
+return blkDropLabels(Object.assign(blkEntry(b),{slots:(b.slots||[]).filter(sl=>!picked.has(sl))}),[...picked])}).filter(b=>(b.slots||[]).length>0);
 const ok=await saveCourtField({blocks:bl});if(ok){renderCavSlots(),renderCavBlocks();toast("Unblocked "+dates.size+" day(s).")}}
 function renderCalendar(){
 $("calMonth").textContent=["January","February","March","April","May","June","July","August","September","October","November","December"][viewMonth]+" "+viewYear
@@ -927,10 +930,10 @@ for(const c of courts){
 const cur=Array.isArray(c.blocks)?c.blocks.slice():[];
 let next;
 if(unblock){const ds=new Set(dates),ps=new Set(picked);
-next=cur.map(b=>ds.has(b.date)?{date:b.date,slots:(b.slots||[]).filter(sl=>!ps.has(sl))}:b).filter(b=>(b.slots||[]).length>0)}
-else{next=cur;dates.forEach(d=>{const ex=next.find(b=>b.date===d);
-if(ex)ex.slots=[...new Set([...(ex.slots||[]),...picked])].sort();
-else next.push({date:d,slots:picked.slice().sort()})})}
+next=cur.map(b=>ds.has(b.date)?blkDropLabels(Object.assign(blkEntry(b),{slots:(b.slots||[]).filter(sl=>!ps.has(sl))}),picked):blkEntry(b)).filter(b=>(b.slots||[]).length>0)}
+else{const lab=labelValue("mcLabel","mcLabelOther");next=cur.map(blkEntry);dates.forEach(d=>{const ex=next.find(b=>b.date===d);
+if(ex){ex.slots=[...new Set([...(ex.slots||[]),...picked])].sort();blkSetLabels(ex,picked,lab)}
+else next.push(blkSetLabels({date:d,slots:picked.slice().sort(),labels:{}},picked,lab))})}
 if(await mcSaveCourt(c,{blocks:next}))ok++}
 renderCourtStatus();try{renderSchedHead();renderGrid()}catch(e){}
 toast((unblock?"Unblocked ":"Blocked ")+ok+" court"+(1===ok?"":"s")+" across "+dates.length+" day"+(1===dates.length?"":"s")+".")}
@@ -942,6 +945,28 @@ var BLOCK_NOTES={}/* ── Block notes ─────────────�
    One note per court + date + SLOT. Kept out of courts/{id} on purpose: that
    document is public so the booking page can grey out blocked slots, and these
    notes name real people. */
+
+/* ── Public labels on blocked slots ───────────────────────────────────────
+   blocks[] entries are {date, slots[], labels{slotKey:text}}. `labels` is the
+   PUBLIC word the booking page shows in place of "Booked"; the note in
+   courtBlockNotes is the private one and is never published.
+
+   blkEntry() exists because several functions below rebuild entries from
+   scratch. Any rebuild that forgets labels drops them silently, and the venue
+   only finds out when a slot they labelled quietly goes back to "Booked". */
+;const BLOCK_LABELS=["Open Play","Tournament","Private Event","Maintenance"]
+;function blkEntry(b){return{date:b.date,slots:(b.slots||[]).slice(),labels:Object.assign({},b.labels||{})}}
+;function blkSetLabels(entry,slots,label){const t=(label||"").trim();entry.labels=entry.labels||{}
+;slots.forEach(sl=>{if(t)entry.labels[sl]=t;else delete entry.labels[sl]});return entry}
+;function blkDropLabels(entry,slots){if(entry.labels)slots.forEach(sl=>delete entry.labels[sl]);return entry}
+/* "" means the venue wants this slot to look like any other booking, which is
+   the old behaviour and stays the default. */
+;function labelValue(selId,otherId){const s=$(selId);if(!s)return""
+;return"__other"===s.value?(($(otherId)||{}).value||"").trim():s.value}
+;function wireLabelPicker(selId,otherId){const s=$(selId),o=$(otherId);if(!s||!o)return
+;s.onchange=function(){const on="__other"===s.value;o.style.display=on?"block":"none";if(on)o.focus()}}
+;function resetLabelPicker(selId,otherId){const s=$(selId),o=$(otherId)
+;if(s)s.value="";if(o){o.value="";o.style.display="none"}}
 ;function blockNoteKey(courtId,date,slot){return courtId+"__"+date+"__"+String(slot).replace(":","-")}
 ;async function saveBlockNote(courtId,date,slot,note){const id=blockNoteKey(courtId,date,slot),txt=(note||"").trim()
 ;try{if(txt){await db.collection("courtBlockNotes").doc(id).set({courtId:courtId,date:date,slot:slot,note:txt,
@@ -962,7 +987,7 @@ catch(e){console.warn("block notes load failed",e)}}
 SLOTMENU_CTX={court:court,slotKey:slotKey,blocked:isBlocked};
 const menu=$("slotMenu");
 $("slotMenuHead").textContent=court.name+" · "+hourLabel(hm2minKey(slotKey));
-$("slotMenuToggle").textContent=isBlocked?"Unblock this slot":"Block this slot";var __ni=$("slotMenuNote");__ni.value=noteFor(court.id,selectedDate,slotKey);__ni.onchange=async function(){await saveBlockNote(court.id,selectedDate,slotKey,__ni.value);try{renderGrid()}catch(e){}toast("Note saved.")};
+$("slotMenuToggle").textContent=isBlocked?"Unblock this slot":"Block this slot";var __lb=$("slotMenuLabel");if(__lb){var __b=(court.blocks||[]).find(function(x){return x.date===selectedDate});var __cur=__b&&__b.labels&&__b.labels[slotKey]||"";/* a label the venue typed by hand is not in the list, so add it rather than showing blank */if(__cur&&!Array.prototype.some.call(__lb.options,function(o){return o.value===__cur||o.text===__cur})){var __o=document.createElement("option");__o.text=__cur;__lb.add(__o)}__lb.value=__cur}var __ni=$("slotMenuNote");__ni.value=noteFor(court.id,selectedDate,slotKey);__ni.onchange=async function(){await saveBlockNote(court.id,selectedDate,slotKey,__ni.value);try{renderGrid()}catch(e){}toast("Note saved.")};
 menu.classList.add("show");
 /* Position next to the tapped cell, kept inside the viewport. */
 const r=ev.currentTarget.getBoundingClientRect(),mw=menu.offsetWidth||200,mh=menu.offsetHeight||160;
@@ -975,12 +1000,13 @@ function hm2minKey(k){const p=String(k||"").split(":");return 60*(Number(p[0])||
 async function slotMenuToggle(){if(!SLOTMENU_CTX)return;const{court,slotKey,blocked}=SLOTMENU_CTX;
 const typedNote=($("slotMenuNote").value||"").trim();
 closeSlotMenu();
-const cur=Array.isArray(court.blocks)?court.blocks.map(b=>({date:b.date,slots:(b.slots||[]).slice()})):[];
+const typedLabel=(($("slotMenuLabel")||{}).value||"").trim();
+const cur=Array.isArray(court.blocks)?court.blocks.map(blkEntry):[];
 let next;
-if(blocked){next=cur.map(b=>b.date===selectedDate?{date:b.date,slots:b.slots.filter(s=>s!==slotKey)}:b).filter(b=>b.slots.length>0)}
+if(blocked){next=cur.map(b=>b.date===selectedDate?blkDropLabels(Object.assign(b,{slots:b.slots.filter(s=>s!==slotKey)}),[slotKey]):b).filter(b=>b.slots.length>0)}
 else{next=cur;const ex=next.find(b=>b.date===selectedDate);
-if(ex){if(!ex.slots.includes(slotKey))ex.slots.push(slotKey);ex.slots.sort()}
-else next.push({date:selectedDate,slots:[slotKey]})}
+if(ex){if(!ex.slots.includes(slotKey))ex.slots.push(slotKey);ex.slots.sort();blkSetLabels(ex,[slotKey],typedLabel)}
+else next.push(blkSetLabels({date:selectedDate,slots:[slotKey],labels:{}},[slotKey],typedLabel))}
 try{await db.collection("courts").doc(court.id).update({blocks:next});
 const idx=COURTS.findIndex(c=>c.id===court.id);if(idx>=0)COURTS[idx].blocks=next;
 /* Note lives per court+date. Keep it while any slot that day is still
