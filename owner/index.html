@@ -708,6 +708,16 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
   .date-row{display:block}
   .date-row>div+div{margin-top:10px}
 }
+</style><style>/* LAYAW-PARTICIPANTS-TABLE-FIT
+   The participants table was width:100%, so nine columns were squeezed into the
+   card and every long value wrapped — a home address came out six lines tall in
+   a column barely wide enough for one word. Same recipe the booking grid has
+   always used: let the table take the width its content needs and scroll
+   sideways inside .table-scroll instead of crushing the columns.
+   Scoped to #partTable on purpose. .txn-table is shared with the Payments
+   table, which nobody has complained about. */
+#partTable{width:max-content;min-width:100%}
+#partTable th,#partTable td{white-space:nowrap}
 </style></head> <body> <div id="loginView" class="login-wrap" style="display:none"> <div class="login-card"> <div class="brand">
 <img id="loginLogo" alt="" style="display:none"/>
 <div>
