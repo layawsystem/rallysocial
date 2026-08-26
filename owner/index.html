@@ -212,6 +212,8 @@ table.sched td.book-cell .stt{font-size:10px;letter-spacing:.08em;font-weight:80
 table.sched td.book-cell.confirmed .stt{color:var(--conf-tx)}
 table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
 .scell-open{background:var(--open-bg);color:var(--open-tx);border-radius:9px;padding:12px 4px;text-align:center;font-size:13px;font-weight:700}
+/* An hour already gone: readable, clearly inert, and not a button. */
+.scell-past{background:#26262C;color:#8E8E97;border-radius:9px;padding:12px 4px;text-align:center;font-size:13px;font-weight:700;cursor:default}
 .slot-menu{position:fixed;z-index:9000;display:none;min-width:190px;background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,.45)}
 .slot-menu.show{display:block}
 .slot-menu-head{padding:8px 10px 6px;font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.02em;border-bottom:1px solid var(--line);margin-bottom:4px}
@@ -1530,6 +1532,14 @@ let BLOCK_NOTES={}/* ── Block notes ─────────────�
 ;s.onchange=function(){const on="__other"===s.value;o.style.display=on?"block":"none";if(on)o.focus()}}
 ;function resetLabelPicker(selId,otherId){const s=$(selId),o=$(otherId)
 ;if(s)s.value="";if(o){o.value="";o.style.display="none"}}
+/* Minutes an hour stays "Open" in the grid after it has started, kept the same
+   as the booking page so the two screens never disagree about one slot. */
+;const PAST_ALLOWANCE_MIN=15
+;function gridSlotIsPast(slotMins){const t=dstr(today())
+;if(selectedDate<t)return!0
+/* the dashboards, unlike the booking page, can sit on a date already gone */
+;if(selectedDate!==t)return!1
+;return slotMins+PAST_ALLOWANCE_MIN<=60*(new Date).getHours()+(new Date).getMinutes()}
 ;function blockNoteKey(courtId,date,slot){return courtId+"__"+date+"__"+String(slot).replace(":","-")}
 ;async function saveBlockNote(courtId,date,slot,note){const id=blockNoteKey(courtId,date,slot),txt=(note||"").trim()
 ;try{if(txt){await db.collection("courtBlockNotes").doc(id).set({courtId:courtId,date:date,slot:slot,note:txt,
@@ -1805,13 +1815,14 @@ o[t.name]=new Set;let s=0;for(;s<e.length;){const r=n[t.name+"|"+e[s].key];if(!r
 ;for(;i<e.length;){const a=n[t.name+"|"+e[i].key];if(!a||a.id!==r.id)break;i++}a[t.name][s]={booking:r,len:i-s}
 ;for(let e=s+1;e<i;e++)o[t.name].add(e);s=i}});const s=$("schedBody");s.innerHTML="",e.forEach((e,n)=>{
 const r=document.createElement("tr"),i=document.createElement("td");i.className="time-cell",
-i.textContent=hourLabel(e.mins)+"-"+hourLabel(e.mins+t),r.appendChild(i);const SLOTKEY=e.key;COURTS.forEach(e=>{if(o[e.name].has(n))return
+i.textContent=hourLabel(e.mins)+"-"+hourLabel(e.mins+t),r.appendChild(i);const SLOTKEY=e.key,SLOTMINS=e.mins;COURTS.forEach(e=>{if(o[e.name].has(n))return
 ;const t=a[e.name][n];if(t){const e=t.booking,n=e.status||"pending",a=document.createElement("td")
 ;a.className="cell book-cell "+n,
 a.rowSpan=t.len,a.innerHTML='<div class="nm">'+esc(nameOf(e))+'</div><div class="stt">'+n.toUpperCase()+"</div>",
 a.onclick=()=>openDetail(e),r.appendChild(a)}else{const t=document.createElement("td");t.className="cell"
 ;const o=document.createElement("div");
-if("unavailable"===String(e.status||"").toLowerCase()){o.className="scell-na",o.textContent="Not Available"}
+if(gridSlotIsPast(SLOTMINS)){o.className="scell-past",o.textContent="Past"}
+else if("unavailable"===String(e.status||"").toLowerCase()){o.className="scell-na",o.textContent="Not Available"}
 else if(isCourtBlocked(e,selectedDate,SLOTKEY)){o.className="scell-blocked",o.textContent="Blocked",
 (function(){const nt=noteFor(e.id,selectedDate,SLOTKEY);if(nt){o.title=nt;const d=document.createElement("div");d.textContent=nt;d.style.cssText="font-size:10.5px;opacity:.85;margin-top:2px;white-space:normal;line-height:1.3;font-weight:600";o.appendChild(d)}})(),
 o.style.cursor="pointer",o.onclick=ev=>openSlotMenu(ev,e,SLOTKEY,!0)}
