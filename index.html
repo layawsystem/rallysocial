@@ -612,6 +612,9 @@ body::after{background:radial-gradient(880px 540px at 8% 90%,var(--acc-08),trans
 .note-known{margin-top:10px;border:1px solid var(--ok-bd,rgba(72,167,104,.34));background:var(--ok-bg,rgba(72,167,104,.14));color:var(--ok-tx,#7BD79B);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.55;font-weight:600}
 /* Inline link, but padded out to a thumb-sized target — it is the control
    that wipes someone's saved details on a shared phone. */
+/* A dotted underline is the one affordance that reads as "there is more here"
+   on a phone, where there is no cursor to change. */
+.cell-inner.has-note{text-decoration:underline dotted;text-underline-offset:3px}
 .linkish{display:inline-block;background:none;border:none;padding:7px 10px;margin:2px 0 0 -4px;font:inherit;font-weight:700;color:var(--link);cursor:pointer;text-decoration:underline;border-radius:8px}
 .linkish:hover{background:var(--acc-12)}
 </style><style>/* LAYAW-DATE-INPUT-FIX
@@ -728,7 +731,7 @@ table.slots .cell-inner.cell-blocked{max-width:120px;overflow:hidden;text-overfl
 </div> <div>
 <div class="mb-lab">TOTAL</div>
 <div class="mb-val" id="mbTotal">₱0</div>
-</div> <button class="btn mb-btn" id="mbContinue" disabled="disabled">Continue</button> </div> <div class="modal-overlay" id="expireOverlay"> <div class="modal-box"> <div class="m-ico">⏱️</div> <h3>Time's up</h3> <p id="expireMsg">Your 10-minute reservation window has expired, so your selected slots have been released. Please pick your slots again.</p> <button class="btn btn-navy" id="expireBtn" style="width:100%">Back to booking</button> </div> </div> <div class="modal-overlay" id="docOverlay"> <div class="modal-doc"> <div class="modal-doc-head">
+</div> <button class="btn mb-btn" id="mbContinue" disabled="disabled">Continue</button> </div> <div class="modal-overlay" id="expireOverlay"> <div class="modal-box"> <div class="m-ico">⏱️</div> <h3>Time's up</h3> <p id="expireMsg">Your 10-minute reservation window has expired, so your selected slots have been released. Please pick your slots again.</p> <button class="btn btn-navy" id="expireBtn" style="width:100%">Back to booking</button> </div> </div> <div class="modal-overlay" id="slotInfoOverlay"><div class="modal-box"><div class="m-ico">&#8505;&#65039;</div><h3 id="slotInfoTitle"></h3><p id="slotInfoBody"></p><button class="btn btn-navy" id="slotInfoClose" style="width:100%">Got it</button></div></div> <div class="modal-overlay" id="docOverlay"> <div class="modal-doc"> <div class="modal-doc-head">
 <h3 id="docTitle">—</h3>
 <button class="doc-x" id="docClose" aria-label="Close">✕</button>
 </div> <div class="modal-doc-body" id="docBody">
@@ -806,6 +809,10 @@ agreementHash=h
 ;$("agrEffective").textContent=(AGREEMENT.effectiveDate?"Effective "+AGREEMENT.effectiveDate+" · ":"")+"Version "+(AGREEMENT.version||"1.0")
 ;$("agreementBody").scrollTop=0}
 ;card.style.display=agreementRequired?"block":"none"}
+/* Tap, not hover: hover does not exist on a phone, and that is where almost
+   every booking is made. */
+;function openSlotInfo(title,body){$("slotInfoTitle").textContent=title
+;$("slotInfoBody").textContent=body;$("slotInfoOverlay").classList.add("show")}
 ;function setKnown(on){const n=$("bookerKnown");if(n)n.style.display=on?"block":"none"}
 ;function resetAgreementFields(){agreementRequired=!1;agreementHash="";agreementCheckedFor="";setKnown(!1)
 ;const c=$("agreementCard");if(c)c.style.display="none"
@@ -837,7 +844,11 @@ function isBlocked(court,date,slotKey){return Array.isArray(court.blocks)&&court
    this page: those notes hold real customers' names. */
 function blockLabelFor(court,date,slotKey){if(!Array.isArray(court.blocks))return""
 ;const b=court.blocks.find(b=>b.date===date&&Array.isArray(b.slots)&&b.slots.includes(slotKey))
-;return b&&b.labels&&b.labels[slotKey]?String(b.labels[slotKey]):""}async function loadData(){if(db)try{
+;return b&&b.labels&&b.labels[slotKey]?String(b.labels[slotKey]):""}
+/* The public pop-up text that goes with that label, if the venue set one. */
+function blockNoteFor(court,date,slotKey){if(!Array.isArray(court.blocks))return""
+;const b=court.blocks.find(b=>b.date===date&&Array.isArray(b.slots)&&b.slots.includes(slotKey))
+;return b&&b.notes&&b.notes[slotKey]?String(b.notes[slotKey]):""}async function loadData(){if(db)try{
 const _to=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),ms))]);
 /* A cold load fetches the reCAPTCHA script, runs it, exchanges it for an
    App Check token and only then opens the first Firestore connection. That
@@ -976,9 +987,11 @@ s?(drop(n),i.className+=" cell-past",i.textContent="Past"):"unavailable"===Strin
    a player something useful, so it is shown, in its own colour so it does not
    read as somebody else's booking. Unlabelled blocks look like "Booked" as
    before. */
-isBlocked(e,selectedDate,a.key)?(drop(n),(()=>{const lb=blockLabelFor(e,selectedDate,a.key)
+isBlocked(e,selectedDate,a.key)?(drop(n),(()=>{const lb=blockLabelFor(e,selectedDate,a.key),nt=blockNoteFor(e,selectedDate,a.key)
 ;i.className+=lb?" cell-blocked":" cell-booked";i.textContent=lb||"Booked"
-;if(lb)i.title=lb})()):availReady?bookedSet.has(o)?(drop(n),i.className+=" cell-booked",
+;if(lb)i.title=nt?lb+" \u2014 "+nt:lb
+;if(lb&&nt){i.classList.add("has-note");i.style.cursor="pointer"
+;i.onclick=()=>openSlotInfo(lb,nt)}})()):availReady?bookedSet.has(o)?(drop(n),i.className+=" cell-booked",
 i.textContent="Booked"):pendingSet.has(o)?(drop(n),i.className+=" cell-pending",
 i.textContent="Pending"):cart.has(n)?(i.className+=" cell-selected",i.textContent="Selected",i.onclick=()=>{
 cart.delete(n),afterCartChange()}):(i.className+=" cell-open",i.textContent="Open",i.onclick=()=>{cart.add(n),
@@ -1121,6 +1134,9 @@ behavior:"smooth"})},$("emailInput").addEventListener("change",refreshAgreementG
 $("clearBooker")&&($("clearBooker").onclick=()=>{clearBooker()
 ;["nameInput","contactInput","emailInput"].forEach(id=>{const el=$(id);if(el)el.value=""})
 ;$("prefillNote").style.display="none",resetAgreementFields(),$("emailInput").focus()}),
+$("slotInfoClose")&&($("slotInfoClose").onclick=()=>$("slotInfoOverlay").classList.remove("show")),
+$("slotInfoOverlay")&&($("slotInfoOverlay").onclick=e=>{
+e.target===$("slotInfoOverlay")&&$("slotInfoOverlay").classList.remove("show")}),
 $("continueBtn").onclick=goCheckout,$("mbContinue").onclick=goCheckout,
 /* No unload/pagehide release here, deliberately. releaseReservation() is async
    (a query plus a batch commit); the browser cancels in-flight requests while
