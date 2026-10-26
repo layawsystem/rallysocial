@@ -87,6 +87,16 @@ img{max-width:100%}
 .table-scroll{overflow-x:auto}
 table.slots{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0}
 table.slots thead th{font-size:13px;font-weight:700;color:var(--text);padding:10px 8px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--card);z-index:2}
+/* LAYAW-COURT-GROUPS
+   Only the court-name row stays pinned while scrolling. Pinning both rows
+   would need the second one offset by the first one's height, which changes
+   with font size — not worth the fragility for a band that is only context. */
+table.slots thead tr#gridGroups th{position:static;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:9px 8px 5px;border-bottom:none}
+table.slots thead tr#gridGroups th.gsep{border-left:1px solid var(--line)}
+.group-pills{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.group-pills button{border:1px solid var(--line);background:var(--elev);color:var(--text-2);border-radius:999px;padding:8px 16px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.group-pills button:hover{border-color:var(--brand-l)}
+.group-pills button.on{background:var(--navy);color:var(--nav-tx,#fff);border-color:var(--sel-bd,var(--line))}
 table.slots thead th:first-child{text-align:left;left:0;z-index:3}
 table.slots thead th:not(:first-child){min-width:104px}
 table.slots td.cell{border-bottom:1px solid var(--line);padding:6px;min-width:104px}
@@ -686,9 +696,11 @@ table.slots .cell-inner.cell-blocked{max-width:120px;overflow:hidden;text-overfl
 <div class="lab">Past</div>
 <div class="sub">Unavailable</div>
 </div>
-</div>  </div> </div> </div> <div class="card"> <h3>Select your slots</h3> <div class="info-bar">Tap a cell to select. You can pick slots across <strong>multiple dates</strong> — switch dates and your selections are kept.</div> <div class="table-scroll">
+</div>  </div> </div> </div> <div class="card"> <h3>Select your slots</h3> <div class="info-bar">Tap a cell to select. You can pick slots across <strong>multiple dates</strong> — switch dates and your selections are kept.</div> <div id="groupPills" class="group-pills" style="display:none"></div> <div class="table-scroll">
 <table class="slots">
 <thead>
+<tr id="gridGroups" style="display:none">
+</tr>
 <tr id="gridHead">
 </tr>
 </thead>
@@ -868,9 +880,9 @@ let _rs;try{_rs=await _to(_reads(),12e3)}
 catch(_e){if("timeout"!==_e.message)throw _e;_rs=await _to(_reads(),15e3)}
 const[e,t,rr,pp,ag]=_rs;if(!e.exists)return void showError("Settings not found.")
 ;SETTINGS=e.data();AGREEMENT=(ag&&ag.exists)?ag.data():null;if(COURTS=[],t.forEach(e=>{const t=e.data()
-;!1!==t.active&&COURTS.push({id:e.id,name:t.name||"Court",status:t.status||"",blocks:Array.isArray(t.blocks)?t.blocks:[]})}),COURTS.sort((e,t)=>e.name.localeCompare(t.name)),
+;!1!==t.active&&COURTS.push({id:e.id,name:t.name||"Court",group:t.group||"",status:t.status||"",blocks:Array.isArray(t.blocks)?t.blocks:[]})}),COURTS.sort(byGroupThenName),
 !COURTS.length)return void showError("No active courts found.");RATES=[];if(rr)rr.forEach(e=>{const t=e.data();let o=hm2min(t.start),n=hm2min(t.end);n<=o&&(n+=1440),RATES.push({start:o,end:n,
-rate:Number(t.rate)})}),RATES.sort((e,t)=>e.start-t.start);PROMOS=[];if(pp)pp.forEach(e=>PROMOS.push({id:e.id,...e.data()}));applyTheme(),renderBrand(),startHero(),renderFooterLinks();const o=today();viewYear=o.getFullYear(),
+group:t.group||"",rate:Number(t.rate)})}),RATES.sort((e,t)=>e.start-t.start);PROMOS=[];if(pp)pp.forEach(e=>PROMOS.push({id:e.id,...e.data()}));applyTheme(),renderBrand(),renderGroupPills(),startHero(),renderFooterLinks();const o=today();viewYear=o.getFullYear(),
 viewMonth=o.getMonth(),selectedDate=dstr(o),renderCalendar(),renderGridHead(),watchAvailability(),watchCourtsLive(),updateSummary(),
 window.__clearLoadHint&&window.__clearLoadHint(),$("loading").style.display="none",$("app").style.display="block"}catch(e){console.error(e),
 showError("timeout"===e.message?(window.__inApp?"Couldn't connect. If you opened this from Messenger or Facebook, tap ••• and choose “Open in browser”, then try again.":"Couldn't connect. Reload the page."):"Failed to load data: "+(e.message||e))}}function applyTheme(){
@@ -945,15 +957,67 @@ $("calNote").innerHTML="Bookings available until <strong>"+maxDate().toLocaleDat
 day:"numeric",year:"numeric"})+"</strong> ("+advanceDays()+" days from today)."}function buildSlots(){
 const e=Number(SETTINGS.openHour??8),t=Number(SETTINGS.closeHour??22),o=Number(SETTINGS.slotMinutes??60),n=[]
 ;for(let a=60*e;a+o<=60*t;a+=o)n.push({mins:a,key:pad2(Math.floor(a/60))+":"+pad2(a%60),label:slotRangeLabel(a,o)})
-;return n}function rateForSlot(e){if(RATES.length){const t=RATES.find(t=>e>=t.start&&e<t.end);if(t)return t.rate}
-return Number(SETTINGS.ratePerHour??0)}function slotCost(e){return Number(SETTINGS.slotMinutes??60)/60*rateForSlot(e)}
+;return n}/* The venue's court types, in the order it wants them shown. Anything with no
+   type, or a type not on this list, sorts to the end. */
+function courtGroups(){return Array.isArray(SETTINGS.courtGroups)?SETTINGS.courtGroups.filter(Boolean):[]}
+function groupRank(g){const i=courtGroups().indexOf(g);return i<0?999:i}
+function byGroupThenName(a,b){return groupRank(a.group)-groupRank(b.group)||a.name.localeCompare(b.name)}
+function groupOf(courtName){const c=COURTS.find(c=>c.name===courtName);return c?c.group||"":""}
+/* Most specific wins. A band tied to this court type beats a band that applies
+   to every court, which beats the type's plain rate, which beats the flat one.
+   Clients with no types and no group on their bands land on rule 2 then 4 —
+   the behaviour they have always had. */
+function rateForSlot(e,group){if(RATES.length){
+const t=group&&RATES.find(r=>r.group===group&&e>=r.start&&e<r.end);if(t)return t.rate
+;const u=RATES.find(r=>!r.group&&e>=r.start&&e<r.end);if(u)return u.rate}
+const gr=SETTINGS.groupRates&&group&&SETTINGS.groupRates[group]
+;if(gr||0===gr)return Number(gr)
+return Number(SETTINGS.ratePerHour??0)}
+/* courtName, not the court object — every caller has the name to hand. */
+function slotCost(e,courtName){return Number(SETTINGS.slotMinutes??60)/60*rateForSlot(e,groupOf(courtName))}
+/* "" means All. Only ever set from the pills, which only exist when the venue
+   has defined more than one type. */
+let ACTIVE_GROUP=""
+/* The groups that actually have a court, in the venue's own order. A type
+   configured but not yet used does not get a pill. */
+function groupsInUse(){const have=new Set(COURTS.map(c=>c.group||""))
+;return courtGroups().filter(g=>have.has(g))}
+function visibleCourts(){return ACTIVE_GROUP?COURTS.filter(c=>(c.group||"")===ACTIVE_GROUP):COURTS}
+function renderGroupPills(){const box=$("groupPills");if(!box)return
+;const gs=groupsInUse()
+/* One type, or none, means there is nothing to choose between. */
+;if(gs.length<2){box.style.display="none";box.innerHTML="";ACTIVE_GROUP="";return}
+;box.style.display="flex";box.innerHTML=""
+;const mk=(label,val)=>{const b=document.createElement("button");b.type="button";b.textContent=label
+;if(val===ACTIVE_GROUP)b.className="on"
+;b.onclick=()=>{ACTIVE_GROUP=val;renderGroupPills();renderGridHead();renderGrid()}
+;box.appendChild(b)}
+;mk("All","");gs.forEach(g=>mk(g,g))}
 function renderGridHead(){const e=$("gridHead");e.innerHTML="";const t=document.createElement("th")
-;t.textContent="Time",e.appendChild(t),COURTS.forEach(t=>{const o=document.createElement("th");o.textContent=t.name,
-e.appendChild(o)})}function watchCourtsLive(){if(window.__courtsUnsub)window.__courtsUnsub();
+;t.textContent="Time",e.appendChild(t),visibleCourts().forEach(t=>{const o=document.createElement("th");o.textContent=t.name,
+e.appendChild(o)})
+;renderGroupBands()}
+/* The band over each type, shown only in the All view — once a single type is
+   filtered to, every column belongs to it and the band says nothing. */
+function renderGroupBands(){const row=$("gridGroups");if(!row)return
+;const gs=groupsInUse()
+;if(ACTIVE_GROUP||gs.length<2){row.style.display="none";row.innerHTML="";return}
+;row.innerHTML="";row.style.display=""
+;const lead=document.createElement("th");lead.textContent="";row.appendChild(lead)
+;let first=!0
+;const runs=[]
+;visibleCourts().forEach(c=>{const g=c.group||""
+;const last=runs[runs.length-1];last&&last.g===g?last.n++:runs.push({g:g,n:1})})
+;runs.forEach(run=>{const th=document.createElement("th");th.colSpan=run.n
+;th.textContent=run.g||"Other";if(!first)th.className="gsep";first=!1;row.appendChild(th)})}function watchCourtsLive(){if(window.__courtsUnsub)window.__courtsUnsub();
 window.__courtsUnsub=db.collection("courts").onSnapshot(function(snap){
-var arr=[];snap.forEach(function(d){var t=d.data();if(!1!==t.active)arr.push({id:d.id,name:t.name||"Court",status:t.status||"",blocks:Array.isArray(t.blocks)?t.blocks:[]})});
-arr.sort(function(a,b){return a.name.localeCompare(b.name)});COURTS=arr;
-try{renderGridHead();renderGrid()}catch(e){}
+var arr=[];snap.forEach(function(d){var t=d.data();if(!1!==t.active)arr.push({id:d.id,name:t.name||"Court",group:t.group||"",status:t.status||"",blocks:Array.isArray(t.blocks)?t.blocks:[]})});
+/* the live watcher rebuilds COURTS wholesale, so it has to carry the type and
+   use the same ordering as the first load — otherwise the group quietly
+   disappears a moment after the page settles. */
+arr.sort(byGroupThenName);COURTS=arr;
+/* a court added or retyped in the dashboard can add or remove a whole pill */
+try{renderGroupPills();renderGridHead();renderGrid()}catch(e){}
 },function(e){console.warn("courts watch:",e)})}
 function watchAvailability(){db&&(availUnsub&&(availUnsub(),availUnsub=null),
 /* Drop the previous date's availability right away and mark the grid "not ready".
@@ -976,7 +1040,7 @@ pendingSet=new Set;const now=Date.now();e.forEach(e=>{const t=e.data();if("cance
 ;let dropped=0;const drop=k=>{cart.has(k)&&(cart.delete(k),dropped++)}
 ;const t=selectedDate===dstr(today()),o=60*(new Date).getHours()+(new Date).getMinutes(),n=Number(SETTINGS.slotMinutes??60)
 ;buildSlots().forEach(a=>{const r=document.createElement("tr"),i=document.createElement("td");i.className="time-cell",
-i.textContent=a.label,r.appendChild(i);const s=t&&a.mins+PAST_ALLOWANCE_MIN<=o;COURTS.forEach(e=>{const t=document.createElement("td")
+i.textContent=a.label,r.appendChild(i);const s=t&&a.mins+PAST_ALLOWANCE_MIN<=o;visibleCourts().forEach(e=>{const t=document.createElement("td")
 ;t.className="cell";const o=e.name+"|"+a.key,n=ck(selectedDate,e.name,a.key),i=document.createElement("div")
 ;i.className="cell-inner",/* Past wins over everything: once an hour has gone by, a player does not
    care whether it was booked, blocked or the court was off. */
@@ -1002,8 +1066,8 @@ afterCartChange()}):cart.has(n)?(i.className+=" cell-selected",i.textContent="Se
 afterCartChange()}):(i.className+=" cell-loading",i.textContent="…"),t.appendChild(i),r.appendChild(t)}),e.appendChild(r)})
 ;dropped&&(updateSummary(),renderCalendar(),toast(1===dropped?"A slot you picked was just taken — removed from your selection":dropped+" slots you picked were just taken — removed from your selection"))
 }function afterCartChange(){renderGrid(),
-updateSummary(),renderCalendar()}function cartTotal(){let e=0;return cart.forEach(t=>{
-e+=slotCost(hm2min(t.split("|")[2]))}),e}function promoQualifies(e,t,o){const n=parseDstr(t).getDay()
+updateSummary(),renderCalendar()}function cartTotal(){let e=0;return cart.forEach(t=>{const p=t.split("|")
+;e+=slotCost(hm2min(p[2]),p[1])}),e}function promoQualifies(e,t,o){const n=parseDstr(t).getDay()
 ;if(Array.isArray(e.days)&&e.days.length&&!e.days.includes(n))return!1
 ;if(Array.isArray(e.dateRanges)&&e.dateRanges.length&&!e.dateRanges.some(e=>t>=e.start&&t<=e.end))return!1
 ;if(Array.isArray(e.timeWindows)&&e.timeWindows.length){const t=hm2min(o)
@@ -1012,7 +1076,7 @@ const t=Number(e.usageLimit||0);if(t>0&&Number(e.usageCount||0)>=t)return{discou
 reason:"has reached its usage limit"};const o=Number(e.minHours||0);if(o>0){
 if(cart.size*(Number(SETTINGS.slotMinutes??60)/60)<o)return{discount:0,
 reason:"requires a booking of at least "+o+" hour"+(1===o?"":"s")}}let n=0,a=0;if(cart.forEach(t=>{
-const[o,r,i]=t.split("|"),s=slotCost(hm2min(i));a+=s,promoQualifies(e,o,i)&&(n+=s)}),n<=0)return{discount:0,
+const[o,r,i]=t.split("|"),s=slotCost(hm2min(i),r);a+=s,promoQualifies(e,o,i)&&(n+=s)}),n<=0)return{discount:0,
 reason:"doesn't apply to your selected date or time"}
 ;let r="amount"===e.discountType?Math.min(Number(e.discountValue||0),a):Math.round(n*Number(e.discountValue||0)/100)
 ;return r<0&&(r=0),r>a&&(r=a),{discount:r}}function currentDiscount(){
@@ -1024,7 +1088,7 @@ t.style.display="none";const n=Number(SETTINGS.slotMinutes??60),a={};[...cart].f
 ;(a[t]=a[t]||[]).push({date:t,court:o,hhmm:n,key:e})}),Object.keys(a).sort().forEach(t=>{
 const r=document.createElement("div");r.className="sum-date",r.textContent=niceDateShort(t),e.appendChild(r),
 a[t].sort((e,t)=>e.court.localeCompare(t.court)||hm2min(e.hhmm)-hm2min(t.hhmm)).forEach(t=>{
-const a=hm2min(t.hhmm),r=slotCost(a);o+=r;const i=document.createElement("div");i.className="sum-item"
+const a=hm2min(t.hhmm),r=slotCost(a,t.court);o+=r;const i=document.createElement("div");i.className="sum-item"
 ;const s=document.createElement("div")
 ;s.className="meta",s.innerHTML="<span>"+t.court+"</span><span style='color:var(--muted);font-size:12px'>"+slotRangeLabel(a,n)+"</span>"
 ;const l=document.createElement("div");l.style.cssText="display:flex;gap:10px;align-items:center"
@@ -1181,7 +1245,7 @@ if(!$("dobInput").value)return void toast("Please enter your date of birth.")
 if(!reservedIds.length||!reservedBookingId){n.disabled=!1,n.textContent="Submit Booking";return toast("Your hold expired. Please pick your slots again.")}
 const a={};[...cart].forEach(e=>{const[t,o,n]=e.split("|");((a[t]=a[t]||{})[o]=a[t][o]||[]).push(n)})
 ;const r=reservedBookingId,i=db.batch(),s={};let l=0
-;Object.keys(a).forEach(e=>{Object.keys(a[e]).forEach(t=>{const o=a[e][t].reduce((e,t)=>e+slotCost(hm2min(t)),0)
+;Object.keys(a).forEach(e=>{Object.keys(a[e]).forEach(t=>{const o=a[e][t].reduce((s,sl)=>s+slotCost(hm2min(sl),t),0)
 ;s[e+"|"+t]=o,l+=o})});const c=appliedPromo&&computePromoDiscount(appliedPromo).discount||0,d=c>0&&l>0?(l-c)/l:1
 /* Re-read our own reserved docs so we can update them by court/date with the right amount. */
 ;const rsnap=await db.collection("bookings").where("bookingId","==",r).get()
