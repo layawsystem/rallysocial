@@ -477,8 +477,30 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 .overlay.show{place-items:start center}
 @media (min-height:820px){.overlay.show{place-items:center}}
 .modal{max-height:none;margin:auto 0;overscroll-behavior:contain}
+/* LAYAW-WALKIN-WIDE
+   Every other modal is a form and reads best narrow. The Walk-in modal is a
+   nine-column table, so it gets the screen it needs and grows with it instead
+   of sitting at 440px on a 27" monitor.
+   Sizing: the time column is 80px and each court column is min 118px, so nine
+   courts need 1142px of table. 1280px less the modal's 48px of padding leaves
+   1232px - enough to show every court without sideways scrolling on a desktop.
+   min() keeps it inside the viewport on anything smaller, and below 900px it
+   goes back to the normal full-width modal behaviour. */
+.modal.walk-modal{max-width:min(1280px,96vw)}
+@media (max-width:900px){.modal.walk-modal{max-width:100%}}
+/* Court-type filter pills, same idea as the booking page. Hidden entirely for
+   a venue with no court types. */
+.walk-pills{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.walk-pills button{border:1px solid var(--line);background:var(--elev);color:var(--text-2);border-radius:999px;padding:7px 15px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.walk-pills button:hover{border-color:var(--brand-l)}
+.walk-pills button.on{background:var(--green);color:var(--btn-tx,#fff);border-color:var(--green)}
 @supports (height:100dvh){.modal{max-height:calc(100dvh - 32px)}}
-.modal *{overscroll-behavior:contain}
+/* Only the overlay and the modal trap scrolling. Applying this to every
+   descendant made .table-scroll a dead end: overflow-x:auto forces a computed
+   overflow-y:auto, so it counts as a vertical scroll container with nothing to
+   scroll, and `contain` then stopped the wheel from ever reaching the modal.
+   The slot table fills most of the Walk-in modal, so it would not scroll. */
+.modal .table-scroll{overscroll-behavior-x:contain}
 body.layaw-modal-open{overflow:hidden;position:relative}
 /* Flex children default to min-width:auto, so the Start/End date row refused
    to shrink and the End date input sat ~67px past the modal's right edge on a
@@ -696,7 +718,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 </div>
 </div> <div class="overlay" id="walkOverlay">
 <div class="modal walk-modal"> <h3>Walk-in Booking <span class="badge cash">Cash</span>
-</h3> <p class="wsub">Booking for <strong id="walkDate">—</strong>. To book another day, close this and pick the date on the calendar first.</p> <div class="wstep">1 · Select court &amp; time</div> <div class="table-scroll">
+</h3> <p class="wsub">Booking for <strong id="walkDate">—</strong>. To book another day, close this and pick the date on the calendar first.</p> <div class="wstep">1 · Select court &amp; time</div> <div id="walkPills" class="walk-pills" style="display:none"></div> <div class="table-scroll">
 <table class="sched" id="walkGrid">
 <thead>
 <tr id="walkHead">
@@ -1207,16 +1229,33 @@ function walkCartTotal(){let sum=0;walkCart.forEach(k=>{sum+=walkSlotCostFor(k)}
    used for money — it cannot know which court or which hour. */
 function walkSlotCost(){
 return Number(SETTINGS.ratePerHour??0)*(Number(SETTINGS.slotMinutes??60)/60)}function openWalkIn(){
-SETTINGS&&COURTS.length?(walkCart.clear(),$("walkDate").textContent=niceDate(selectedDate),$("walkName").value="",
+SETTINGS&&COURTS.length?(walkCart.clear(),WALK_GROUP="",renderWalkPills(),$("walkDate").textContent=niceDate(selectedDate),$("walkName").value="",
 $("walkContact").value="",$("walkEmail").value="",$("walkStaff").value=ADMIN_NAME||"",$("walkTendered").value="",
 $("walkErr").textContent="",
 renderWalkGrid(),updateWalkTotals(),$("walkOverlay").classList.add("show")):toast("Please wait — still loading courts.")
-}function renderWalkGrid(){$("walkHead").innerHTML="<th>Time</th>"+COURTS.map(t=>"<th>"+t.name+"</th>").join("")
+}/* "" means All. Only ever set from the pills, which only exist when the venue
+   has more than one court type. */
+let WALK_GROUP=""
+function walkGroupsInUse(){const have=new Set(COURTS.map(c=>c.group||""))
+;return adminCourtGroups().filter(g=>have.has(g))}
+function walkVisibleCourts(){return WALK_GROUP?COURTS.filter(c=>(c.group||"")===WALK_GROUP):COURTS}
+function renderWalkPills(){const box=$("walkPills");if(!box)return
+;const gs=walkGroupsInUse()
+;if(gs.length<2){box.style.display="none";box.innerHTML="";WALK_GROUP="";return}
+;box.style.display="flex";box.innerHTML=""
+;const mk=(label,val)=>{const b=document.createElement("button");b.type="button";b.textContent=label
+;if(val===WALK_GROUP)b.className="on"
+/* The cart is keyed by court name, so filtering only hides columns - a slot
+   already selected in a hidden type stays selected and stays in the total. */
+;b.onclick=()=>{WALK_GROUP=val;renderWalkPills();renderWalkGrid();updateWalkTotals()}
+;box.appendChild(b)}
+;mk("All","");gs.forEach(g=>mk(g,g))}
+function renderWalkGrid(){$("walkHead").innerHTML="<th>Time</th>"+walkVisibleCourts().map(t=>"<th>"+t.name+"</th>").join("")
 ;const t=$("walkBody");t.innerHTML="";const e=new Set;DAY.forEach(t=>{
 "cancelled"!==t.status&&(t.slots||[]).forEach(n=>e.add(t.court+"|"+n))})
 ;const n=selectedDate===dstr(today()),a=60*(new Date).getHours()+(new Date).getMinutes(),o=Number(SETTINGS.slotMinutes??60)
 ;buildSlots().forEach(s=>{const i=document.createElement("tr"),c=document.createElement("td");c.className="time-cell",
-c.textContent=hourLabel(s.mins)+"-"+hourLabel(s.mins+o),i.appendChild(c);const r=n&&s.mins+o<=a;COURTS.forEach(t=>{
+c.textContent=hourLabel(s.mins)+"-"+hourLabel(s.mins+o),i.appendChild(c);const r=n&&s.mins+o<=a;walkVisibleCourts().forEach(t=>{
 const n=document.createElement("td");n.className="cell book-cell"
 ;const a=t.name+"|"+s.key,o=document.createElement("div");r||e.has(a)?(o.className="wcell off",
 o.textContent=r?"Past":"Taken"):walkCart.has(a)?(o.className="wcell sel",o.textContent="Selected",o.onclick=()=>{
