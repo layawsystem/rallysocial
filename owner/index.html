@@ -2091,7 +2091,7 @@ instagramName:sStr("set_instagramName"),instagramLink:sStr("set_instagramLink")}
 RATES_ALL.sort((e,t)=>hmMin(e.start)-hmMin(t.start)),
 !RATES_ALL.length)return void(e.innerHTML='<div class="empty">No rate bands yet. Add one below.</div>');e.innerHTML="",
 RATES_ALL.forEach(t=>{const n=document.createElement("div");n.className="rate-row",
-n.innerHTML='<div class="rr-main"><div class="rr-t">'+fmtHM(t.start)+" – "+fmtHM(t.end)+'</div><div class="pr-sub">'+peso(t.rate)+" / hour · "+esc(t.group||"All courts")+'</div></div><button class="mini-btn danger" data-del="'+t.id+'">Delete</button>',
+n.innerHTML='<div class="rr-main"><div class="rr-t">'+fmtHM(t.start)+" – "+fmtHM(t.end)+'</div><div class="pr-sub">'+peso(t.rate)+(courtGroups().length?" / hour · "+esc(t.group||"All courts"):" / hour")+'</div></div><button class="mini-btn danger" data-del="'+t.id+'">Delete</button>',
 e.appendChild(n)}),e.querySelectorAll("[data-del]").forEach(e=>e.onclick=async()=>{
 if(confirm("Delete this rate band?"))try{await db.collection("rates").doc(e.getAttribute("data-del")).delete(),
 toast("Rate band deleted."),renderRates()}catch(e){console.error(e),toast("Could not delete.")}})}catch(t){
