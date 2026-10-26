@@ -741,7 +741,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 </div> <div class="modal-actions"> <button class="btn-ghost" id="cancelBack">Go back</button> <button class="act act-cancel" id="cancelGo">Cancel booking</button> </div> </div>
 </div> <div id="boot" class="loading">Loading…</div> <div class="toast" id="toast">
 </div> <script>/* Optional fallback logo used only when settings/config has no logoUrl. Leave "" for none. */
-const DEFAULT_LOGO="";let db,auth,viewYear,viewMonth,SETTINGS=null,COURTS=[],dayUnsub=null,pendingUnsub=null,selectedDate=null,currentView="list",DAY=[],PENDING=[],ADMIN_NAME="",walkCart=new Set
+const DEFAULT_LOGO="";let db,auth,viewYear,viewMonth,SETTINGS=null,COURTS=[],RATES=[],dayUnsub=null,pendingUnsub=null,selectedDate=null,currentView="list",DAY=[],PENDING=[],ADMIN_NAME="",walkCart=new Set
 ;try{const t=firebase.initializeApp(firebaseConfig,"layawAdmin");try{
 APPCHECK_SITE_KEY&&0!==APPCHECK_SITE_KEY.indexOf("PASTE_")&&firebase.appCheck(t).activate(APPCHECK_SITE_KEY,!0)
 }catch(t){console.warn("AppCheck:",t)}
@@ -783,7 +783,15 @@ e.setProperty("--nav-tx",SETTINGS.colorPrimaryText||txOn(SETTINGS.colorPrimary||
 accVars(e,SETTINGS.colorAccent||SETTINGS.colorPrimary||"#242428")
 ;const n=SETTINGS.businessName||CLIENT.name||"Dashboard";$("loginBiz").textContent=n,$("topBiz").textContent=n,
 document.title=n+" — Admin",(function(){var _lu=SETTINGS.logoUrl||DEFAULT_LOGO;if(!_lu)return;[$("loginLogo"),$("topLogo")].forEach(function(t){if(!t)return;t.src=_lu;t.style.display="block"})})()}const e=await db.collection("courts").get();COURTS=[],e.forEach(t=>{const e=t.data()
-;!1!==e.active&&COURTS.push({id:t.id,name:e.name||"Court",type:e.type||"",status:e.status||"",blocks:Array.isArray(e.blocks)?e.blocks:[]})}),COURTS.sort((t,e)=>t.name.localeCompare(e.name))}catch(t){
+;!1!==e.active&&COURTS.push({id:t.id,name:e.name||"Court",type:e.type||"",group:e.group||"",status:e.status||"",blocks:Array.isArray(e.blocks)?e.blocks:[]})}),COURTS.sort(function(t,e){const gi=g=>{const i=adminCourtGroups().indexOf(g);return i<0?999:i}
+;return gi(t.group)-gi(e.group)||t.name.localeCompare(e.name)})
+/* Time bands, read exactly as the booking page reads them: start/end to
+   minutes, a band that ends past midnight wrapped, the court type kept. The
+   desk quoted the flat rate for every hour before this. */
+;const rr=await db.collection("rates").get();RATES=[]
+;rr.forEach(d=>{const r=d.data();let s=hm2min(r.start),e2=hm2min(r.end);e2<=s&&(e2+=1440)
+;RATES.push({start:s,end:e2,group:r.group||"",rate:Number(r.rate)})})
+;RATES.sort((a,b)=>a.start-b.start)}catch(t){
 console.warn(t)}}function adminSlug(t){return String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"")}
 function adminEmail(t){const e=adminSlug(t);return e?e+"@courtadmin.app":""}async function startDashboard(){
 await loadBase();const t=today();viewYear=t.getFullYear(),viewMonth=t.getMonth(),selectedDate=dstr(t),
@@ -1047,8 +1055,12 @@ try{syncAddBtn();syncBulkBtns()}catch(e){}}
 
 function watchCourts(){if(window.__courtsUnsub)window.__courtsUnsub();
 window.__courtsUnsub=db.collection("courts").onSnapshot(function(snap){
-var arr=[];snap.forEach(function(d){var t=d.data();if(!1!==t.active)arr.push({id:d.id,name:t.name||"Court",type:t.type||"",status:t.status||"",blocks:Array.isArray(t.blocks)?t.blocks:[]})});
-arr.sort(function(a,b){return a.name.localeCompare(b.name)});COURTS=arr;
+var arr=[];snap.forEach(function(d){var t=d.data();if(!1!==t.active)arr.push({id:d.id,name:t.name||"Court",type:t.type||"",group:t.group||"",status:t.status||"",blocks:Array.isArray(t.blocks)?t.blocks:[]})});
+/* Must carry the court type and sort the same way as the initial load: this
+   watcher overwrites COURTS seconds later, and a court with no group prices
+   at the flat rate instead of its own. */
+arr.sort(function(a,b){var gi=function(g){var i=adminCourtGroups().indexOf(g);return i<0?999:i}
+;return gi(a.group)-gi(b.group)||a.name.localeCompare(b.name)});COURTS=arr;
 try{renderCourtStatus()}catch(e){}
 /* Blocks affect the schedule grid too — re-render it so blocked slots
    stop showing as Open while the page is open. */
@@ -1175,7 +1187,25 @@ else{const patch="confirm"===e?{status:"confirmed"}:{status:"cancelled",cancelle
 cancelledAt:firebase.firestore.FieldValue.serverTimestamp()}
 ;a.forEach(n=>o.update(db.collection("bookings").doc(n),patch)),
 await o.commit(),toast("confirm"===e?"Booking confirmed.":"Booking cancelled.")}}catch(t){console.error(t),
-toast("Could not update. Please try again.")}}function walkSlotCost(){
+toast("Could not update. Please try again.")}}function adminCourtGroups(){return Array.isArray(SETTINGS.courtGroups)?SETTINGS.courtGroups.filter(Boolean):[]}
+function adminGroupOf(courtName){const c=COURTS.find(c=>c.name===courtName);return c?c.group||"":""}
+/* Same four rules as the booking page, in the same order, so the desk and the
+   website can never quote a different price for the same slot:
+   a band for this type → a band for all courts → the type's rate → the flat rate. */
+function adminRateFor(mins,group){if(Array.isArray(RATES)&&RATES.length){
+const t=group&&RATES.find(r=>r.group===group&&mins>=r.start&&mins<r.end);if(t)return t.rate
+;const u=RATES.find(r=>!r.group&&mins>=r.start&&mins<r.end);if(u)return u.rate}
+const gr=SETTINGS.groupRates&&group&&SETTINGS.groupRates[group]
+;if(gr||0===gr)return Number(gr)
+;return Number(SETTINGS.ratePerHour??0)}
+/* key is "Court name|HH:MM" */
+function walkSlotCostFor(key){const i=String(key).lastIndexOf("|")
+;const court=i<0?"":key.slice(0,i),hhmm=i<0?key:key.slice(i+1)
+;return Number(SETTINGS.slotMinutes??60)/60*adminRateFor(hm2min(hhmm),adminGroupOf(court))}
+function walkCartTotal(){let sum=0;walkCart.forEach(k=>{sum+=walkSlotCostFor(k)});return sum}
+/* Kept for anything still asking "what does an hour cost here", but no longer
+   used for money — it cannot know which court or which hour. */
+function walkSlotCost(){
 return Number(SETTINGS.ratePerHour??0)*(Number(SETTINGS.slotMinutes??60)/60)}function openWalkIn(){
 SETTINGS&&COURTS.length?(walkCart.clear(),$("walkDate").textContent=niceDate(selectedDate),$("walkName").value="",
 $("walkContact").value="",$("walkEmail").value="",$("walkStaff").value=ADMIN_NAME||"",$("walkTendered").value="",
@@ -1192,7 +1222,7 @@ const n=document.createElement("td");n.className="cell book-cell"
 o.textContent=r?"Past":"Taken"):walkCart.has(a)?(o.className="wcell sel",o.textContent="Selected",o.onclick=()=>{
 walkCart.delete(a),renderWalkGrid(),updateWalkTotals()}):(o.className="wcell open",o.textContent="Open",o.onclick=()=>{
 walkCart.add(a),renderWalkGrid(),updateWalkTotals()}),n.appendChild(o),i.appendChild(n)}),t.appendChild(i)})}
-function updateWalkTotals(){const t=walkCart.size*walkSlotCost();$("walkTotal").textContent=peso(t)
+function updateWalkTotals(){const t=walkCartTotal();$("walkTotal").textContent=peso(t)
 ;const e=Number($("walkTendered").value||0),n=e-t,a=$("walkChange").parentElement;e>0&&n<0?(a.classList.add("neg"),
 $("walkChange").textContent="−"+peso(Math.abs(n))):(a.classList.remove("neg"),$("walkChange").textContent=peso(n>0?n:0))
 }async function nextBookingId(){let t=SETTINGS.idPrefix
@@ -1276,7 +1306,7 @@ const e=t.indexOf("|"),n=t.slice(0,e),a=t.slice(e+1);(r[n]=r[n]||[]).push(a)})
 ;for(const t of Object.keys(r))for(const e of r[t])if(d.has(t+"|"+e))return $("walkErr").textContent=t+" "+hourLabel(hm2min(e))+" was just taken. Please adjust the selection.",
 i.disabled=!1,i.textContent="Confirm & Save",renderWalkGrid(),void updateWalkTotals()
 ;const u=await nextBookingId(),m=[],h=db.batch();Object.keys(r).forEach(t=>{
-const e=r[t].sort(),n=e.length*walkSlotCost(),o=db.collection("bookings").doc();m.push(o),h.set(o,{bookingId:u,date:c,
+const e=r[t].sort(),n=e.reduce((s,sl)=>s+walkSlotCostFor(t+"|"+sl),0),o=db.collection("bookings").doc();m.push(o),h.set(o,{bookingId:u,date:c,
 court:t,slots:e,startTime:e[0],endTime:e[e.length-1],amount:n,paymentMethod:"Cash",status:"pending",source:"walk-in",
 handledBy:a,createdAt:firebase.firestore.FieldValue.serverTimestamp()})
 }),h.set(db.collection("bookingContacts").doc(u),{bookingId:u,bookerName:t,contact:e,email:n,handledBy:a,cashTendered:s,
