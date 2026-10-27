@@ -142,6 +142,9 @@ table.sched td.book-cell.pending{background:var(--pend-bg)}
 table.sched td.book-cell .nm{font-weight:800;font-size:13px;color:var(--text);white-space:normal;line-height:1.2}
 table.sched td.book-cell .stt{font-size:10px;letter-spacing:.08em;font-weight:800;margin-top:4px}
 table.sched td.book-cell.confirmed .stt{color:var(--conf-tx)}
+/* The name is var(--text), near-white, which disappears on a solid gold cell.
+   It has to follow the cell, not the page. */
+table.sched td.book-cell.confirmed .nm{color:var(--conf-tx)}
 table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
 .scell-open{background:var(--open-bg);color:var(--open-tx);border-radius:9px;padding:12px 4px;text-align:center;font-size:13px;font-weight:700}
 /* An hour already gone: readable, clearly inert, and not a button. */
@@ -317,8 +320,10 @@ table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
   --pend-bg:rgba(142,126,0,.45);    --pend-tx:#CBBA43;  --pend-bd:rgba(142,126,0,.62);
   --past-bg:rgba(255,255,255,.04);  --past-tx:#6E6A62;  --past-bd:rgba(255,255,255,.06);
   --ok-bg:rgba(224,182,84,.16);     --ok-tx:#EBD08C;
-  /* The sale. Deliberately the loudest cell on the grid. */
-  --conf-bg:rgba(224,182,84,.34);   --conf-tx:#F6E7B4;
+  /* The sale. Deliberately the loudest cell on the grid — the same solid gold
+     a player sees on a slot they have selected, so one colour means "this one"
+     on every screen. */
+  --conf-bg:#E0B654;                --conf-tx:#231803;
   --cancel-bg:rgba(232,138,146,.13);--cancel-tx:#EFA0A7;
   --btn-dis-bg:rgba(255,255,255,.05);
 
