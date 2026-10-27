@@ -170,8 +170,16 @@ table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
 #walkGrid td.book-cell{cursor:pointer}
 .wcell{border-radius:9px;padding:12px 4px;text-align:center;font-size:12px;font-weight:700}
 .wcell.open{background:var(--open-bg);color:var(--open-tx);cursor:pointer}
-.wcell.sel{background:var(--navy);color:#fff}
-.wcell.off{background:#26262C;color:#8E8E97;cursor:not-allowed}
+/* Was var(--navy) and a hard-coded #26262C — neither followed the theme, so a
+   selected walk-in slot looked nothing like a selected slot on the booking
+   page. Both now come from the same variables as everywhere else. */
+.wcell.sel{background:var(--sel-bg);color:var(--sel-tx)}
+.wcell.off{background:var(--past-bg);color:var(--past-tx);cursor:not-allowed}
+/* LAYAW-DASH-GLASS */
+.wcell,table.sched td.book-cell{-webkit-backdrop-filter:blur(8px) saturate(1.15);backdrop-filter:blur(8px) saturate(1.15)}
+.wcell.open{box-shadow:inset 0 0 0 1px var(--open-bd),inset 0 1px 0 rgba(255,255,255,.07)}
+.wcell.sel{box-shadow:inset 0 0 0 1.5px var(--sel-bd),inset 0 1px 0 rgba(255,255,255,.16)}
+.wcell.off{box-shadow:inset 0 0 0 1px var(--past-bd),inset 0 1px 0 rgba(255,255,255,.04)}
 .pos{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px}
 .pos-row{display:flex;align-items:center;justify-content:space-between;font-size:15px}
 .pos-row strong{font-size:18px;color:var(--text)}
@@ -298,13 +306,19 @@ table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
   --info-line:var(--acc-22);
   --info-tx:var(--acc-tint);
 
-  /* Slot states, re-tuned as translucent tints for a dark glass surface */
-  --open-bg:rgba(72,167,104,.14);   --open-tx:#7BD79B;  --open-bd:rgba(72,167,104,.34);
-  --book-bg:rgba(232,138,146,.13);  --book-tx:#EFA0A7;  --book-bd:rgba(232,138,146,.30);
-  --pend-bg:rgba(224,185,62,.14);   --pend-tx:#E8C766;  --pend-bd:rgba(224,185,62,.32);
-  --past-bg:rgba(255,255,255,.045); --past-tx:#7C776D;  --past-bd:rgba(255,255,255,.07);
-  --ok-bg:rgba(72,167,104,.14);     --ok-tx:#7BD79B;
-  --conf-bg:rgba(72,167,104,.14);   --conf-tx:#7BD79B;
+  /* Slot states — the venue's black + gold, as glass (2026-10-27).
+     The booking page makes Open the brightest state because the player is
+     looking for what is free. Here the venue is looking for what is SOLD, so
+     Confirmed carries the strongest gold and Open is only a quiet wash.
+     Same palette, opposite hierarchy, on purpose. */
+  --open-bg:rgba(224,182,84,.16);   --open-tx:#D9C089;  --open-bd:rgba(224,182,84,.30);
+  --book-bg:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)),rgba(224,182,84,.10);
+  --book-tx:rgba(224,182,84,.52);   --book-bd:rgba(224,182,84,.17);
+  --pend-bg:rgba(142,126,0,.45);    --pend-tx:#CBBA43;  --pend-bd:rgba(142,126,0,.62);
+  --past-bg:rgba(255,255,255,.04);  --past-tx:#6E6A62;  --past-bd:rgba(255,255,255,.06);
+  --ok-bg:rgba(224,182,84,.16);     --ok-tx:#EBD08C;
+  /* The sale. Deliberately the loudest cell on the grid. */
+  --conf-bg:rgba(224,182,84,.34);   --conf-tx:#F6E7B4;
   --cancel-bg:rgba(232,138,146,.13);--cancel-tx:#EFA0A7;
   --btn-dis-bg:rgba(255,255,255,.05);
 
@@ -803,6 +817,10 @@ e.setProperty("--green",SETTINGS.colorAccent||SETTINGS.colorPrimary||"#242428"),
 e.setProperty("--btn-tx",SETTINGS.colorAccentText||txOn(SETTINGS.colorAccent||SETTINGS.colorPrimary||"#242428")),
 e.setProperty("--nav-tx",SETTINGS.colorPrimaryText||txOn(SETTINGS.colorPrimary||"#242428")),
 accVars(e,SETTINGS.colorAccent||SETTINGS.colorPrimary||"#242428")
+/* The booking page has always set this from settings; the dashboards never
+   did, so a selected walk-in slot stayed the stock blue-grey while the player
+   saw the venue colour. Same source now, so both screens agree. */
+;(function(){var sb=SETTINGS.slotSelectedBg||"#2B2B32";e.setProperty("--sel-bg",sb);e.setProperty("--sel-tx",txOn(sb))})()
 ;const n=SETTINGS.businessName||CLIENT.name||"Dashboard";$("loginBiz").textContent=n,$("topBiz").textContent=n,
 document.title=n+" — Admin",(function(){var _lu=SETTINGS.logoUrl||DEFAULT_LOGO;if(!_lu)return;[$("loginLogo"),$("topLogo")].forEach(function(t){if(!t)return;t.src=_lu;t.style.display="block"})})()}const e=await db.collection("courts").get();COURTS=[],e.forEach(t=>{const e=t.data()
 ;!1!==e.active&&COURTS.push({id:t.id,name:e.name||"Court",type:e.type||"",group:e.group||"",status:e.status||"",blocks:Array.isArray(e.blocks)?e.blocks:[]})}),COURTS.sort(function(t,e){const gi=g=>{const i=adminCourtGroups().indexOf(g);return i<0?999:i}
