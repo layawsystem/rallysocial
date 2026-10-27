@@ -304,10 +304,16 @@ table.slots .time-cell{position:sticky;left:0;background:var(--card);z-index:2}
   --info-line:var(--acc-22);
   --info-tx:var(--acc-tint);
 
-  /* Slot states, re-tuned as translucent tints for a dark glass surface */
-  --open-bg:rgba(72,167,104,.14);   --open-tx:#7BD79B;  --open-bd:rgba(72,167,104,.34);
-  --book-bg:rgba(232,138,146,.13);  --book-tx:#EFA0A7;  --book-bd:rgba(232,138,146,.30);
-  --pend-bg:rgba(224,185,62,.14);   --pend-tx:#E8C766;  --pend-bd:rgba(224,185,62,.32);
+  /* Slot states — glass, tuned to the venue's black + gold theme (2026-10-27).
+     Open is the inviting one so it carries the brightest gold; Booked is almost
+     black with only a hint of it; Pending sits between them at #8e7e00. They
+     share a hue on purpose, so lightness is what separates them — which is why
+     the three are kept far apart in tone rather than merely different. */
+  --open-bg:rgba(224,182,84,.22);   --open-tx:#F3E0A8;  --open-bd:rgba(224,182,84,.42);
+  --book-bg:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)),rgba(224,182,84,.10);
+  --book-tx:rgba(224,182,84,.52);   --book-bd:rgba(224,182,84,.17);
+  --pend-bg:linear-gradient(rgba(0,0,0,.30),rgba(0,0,0,.30)),rgba(142,126,0,.62);
+  --pend-tx:#D9C84E;                --pend-bd:rgba(142,126,0,.72);
   --past-bg:rgba(255,255,255,.045); --past-tx:#7C776D;  --past-bd:rgba(255,255,255,.07);
   --ok-bg:rgba(72,167,104,.14);     --ok-tx:#7BD79B;
   --conf-bg:rgba(72,167,104,.14);   --conf-tx:#7BD79B;
@@ -436,7 +442,14 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),0 6px 16px rgba(0,0,0,.35);
 }
 .cell-blocked,.scell-blocked{background:rgba(224,149,74,.13);color:#E5A863;box-shadow:inset 0 0 0 1px rgba(224,149,74,.28)}
-.legend .sw{box-shadow:inset 0 0 0 1px rgba(255,255,255,.10)}
+.legend .sw{box-shadow:inset 0 0 0 1px rgba(255,255,255,.10),inset 0 1px 0 rgba(255,255,255,.09);-webkit-backdrop-filter:blur(6px) saturate(1.15);backdrop-filter:blur(6px) saturate(1.15)}
+/* LAYAW-SLOT-GLASS */
+.cell-open,.cell-selected,.cell-booked,.cell-pending,.cell-past{-webkit-backdrop-filter:blur(8px) saturate(1.15);backdrop-filter:blur(8px) saturate(1.15)}
+.cell-open{box-shadow:inset 0 0 0 1px var(--open-bd),inset 0 1px 0 rgba(255,255,255,.08)}
+.cell-selected{box-shadow:inset 0 0 0 1.5px var(--sel-bd),inset 0 1px 0 rgba(255,255,255,.16)}
+.cell-booked{box-shadow:inset 0 0 0 1px var(--book-bd),inset 0 1px 0 rgba(255,255,255,.05)}
+.cell-pending{box-shadow:inset 0 0 0 1px var(--pend-bd),inset 0 1px 0 rgba(255,255,255,.09)}
+.cell-past{box-shadow:inset 0 0 0 1px var(--past-bd),inset 0 1px 0 rgba(255,255,255,.04)}
 
 /* ── Info / notes ───────────────────────────────────────────────── */
 .info-bar,.hold-note,.contact-box{
@@ -882,7 +895,10 @@ const[e,t,rr,pp,ag]=_rs;if(!e.exists)return void showError("Settings not found."
 ;SETTINGS=e.data();AGREEMENT=(ag&&ag.exists)?ag.data():null;if(COURTS=[],t.forEach(e=>{const t=e.data()
 ;!1!==t.active&&COURTS.push({id:e.id,name:t.name||"Court",group:t.group||"",status:t.status||"",blocks:Array.isArray(t.blocks)?t.blocks:[]})}),COURTS.sort(byGroupThenName),
 !COURTS.length)return void showError("No active courts found.");RATES=[];if(rr)rr.forEach(e=>{const t=e.data();let o=hm2min(t.start),n=hm2min(t.end);n<=o&&(n+=1440),RATES.push({start:o,end:n,
-group:t.group||"",rate:Number(t.rate)})}),RATES.sort((e,t)=>e.start-t.start);PROMOS=[];if(pp)pp.forEach(e=>PROMOS.push({id:e.id,...e.data()}));applyTheme(),renderBrand(),renderGroupPills(),startHero(),renderFooterLinks();const o=today();viewYear=o.getFullYear(),
+group:t.group||"",rate:Number(t.rate)})}),RATES.sort((e,t)=>e.start-t.start);PROMOS=[];if(pp)pp.forEach(e=>PROMOS.push({id:e.id,...e.data()}));applyTheme(),renderBrand(),renderGroupPills(),startHero(),renderFooterLinks()
+/* Did this tab leave a hold behind last time? Give it back before the player
+   sees the grid. */
+;releaseOrphanedHold();const o=today();viewYear=o.getFullYear(),
 viewMonth=o.getMonth(),selectedDate=dstr(o),renderCalendar(),renderGridHead(),watchAvailability(),watchCourtsLive(),updateSummary(),
 window.__clearLoadHint&&window.__clearLoadHint(),$("loading").style.display="none",$("app").style.display="block"}catch(e){console.error(e),
 showError("timeout"===e.message?(window.__inApp?"Couldn't connect. If you opened this from Messenger or Facebook, tap ••• and choose “Open in browser”, then try again.":"Couldn't connect. Reload the page."):"Failed to load data: "+(e.message||e))}}function applyTheme(){
@@ -1141,9 +1157,27 @@ const lockRefs=lockKeys.map(k=>db.collection("slotLocks").doc(k.id))
 ;const ref=db.collection("bookings").doc();reservedIds.push(ref.id)
 ;tx.set(ref,{bookingId:bid,date:date,court:court,slots:slots,startTime:slots[0],endTime:slots[slots.length-1],
 status:"reserved",holdUntil:hu,createdAt:firebase.firestore.FieldValue.serverTimestamp()})})})
-})}
+})
+/* Committed - from here the slot is held, so it has to be recoverable. */
+;rememberHold(reservedBookingId,reservedLockIds)}
+/* An abandoned checkout used to leave the slot held until holdUntil passed.
+   Releasing on unload cannot work (see the note further down), so the hold is
+   remembered here and released on the NEXT load of this tab instead.
+   sessionStorage, not localStorage: per-tab, so a second tab can never release
+   a hold the first tab is still paying for. */
+const HOLD_KEY="layaw.pendingHold"
+function rememberHold(bid,lockIds){try{bid&&sessionStorage.setItem(HOLD_KEY,JSON.stringify({bid:bid,locks:lockIds||[]}))}catch(e){}}
+function forgetHold(){try{sessionStorage.removeItem(HOLD_KEY)}catch(e){}}
+/* Runs once at startup. Fire-and-forget is fine: releaseReservation() re-renders
+   the grid when it finishes, so the freed slot turns green on its own. */
+async function releaseOrphanedHold(){let v=null
+;try{v=JSON.parse(sessionStorage.getItem(HOLD_KEY)||"null")}catch(e){}
+;if(!v||!v.bid)return
+;forgetHold()
+;reservedBookingId=v.bid;reservedLockIds=Array.isArray(v.locks)?v.locks:[];reservedIds=[]
+;try{await releaseReservation()}catch(e){console.warn("orphaned hold not released",e)}}
 /* Release the current reservation: delete reserved booking docs AND their slot locks. */
-async function releaseReservation(){const bid=reservedBookingId,lockIds=reservedLockIds.slice()
+async function releaseReservation(){forgetHold();const bid=reservedBookingId,lockIds=reservedLockIds.slice()
 ;releasingBookingId=bid;reservedIds=[];reservedLockIds=[];reservedBookingId=null
 ;try{const b=db.batch();let any=!1
 /* Delete by querying our own reserved docs (robust even if in-memory IDs were lost). */
@@ -1202,6 +1236,13 @@ $("slotInfoClose")&&($("slotInfoClose").onclick=()=>$("slotInfoOverlay").classLi
 $("slotInfoOverlay")&&($("slotInfoOverlay").onclick=e=>{
 e.target===$("slotInfoOverlay")&&$("slotInfoOverlay").classList.remove("show")}),
 $("continueBtn").onclick=goCheckout,$("mbContinue").onclick=goCheckout,
+/* Browsers do not allow custom text or custom buttons here - every modern one
+   shows its own fixed "Reload site? Changes you made may not be saved" with
+   Cancel/Reload. Setting returnValue is the only way to ask at all. If they
+   reload anyway, releaseOrphanedHold() frees the slot on the way back in. */
+window.addEventListener("beforeunload",function(e){
+if(!reservedBookingId)return
+;e.preventDefault();e.returnValue=""}),
 /* No unload/pagehide release here, deliberately. releaseReservation() is async
    (a query plus a batch commit); the browser cancels in-flight requests while
    the page unloads, so it never completes. This was tried and measured — the
@@ -1265,7 +1306,7 @@ agreementVersion:AGREEMENT&&AGREEMENT.version||"",lastBookingId:r,
 signedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:!0})}
 ;if(i.set(db.collection("bookingContacts").doc(r),{
 bookingId:r,bookerName:e,contact:t,email:o,promoCode:appliedPromo?String(appliedPromo.code||""):"",discount:c,
-createdAt:firebase.firestore.FieldValue.serverTimestamp()}),await i.commit(),reservedIds=[],reservedLockIds=[],reservedBookingId=null,receiptData)try{
+createdAt:firebase.firestore.FieldValue.serverTimestamp()}),await i.commit(),forgetHold(),reservedIds=[],reservedLockIds=[],reservedBookingId=null,receiptData)try{
 await db.collection("receipts").doc(r).set({bookingId:r,image:receiptData,
 createdAt:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){console.warn("receipt save failed",e)}
 if(appliedPromo&&appliedPromo.id)try{await db.collection("promos").doc(appliedPromo.id).update({
@@ -1275,7 +1316,7 @@ $("checkoutView").style.display="none",$("successView").style.display="block",cl
 appliedPromo=null,$("voucherInput")&&($("voucherInput").value=""),setVoucherMsg("",!0),$("successId").textContent=r,
 $("viewStatusBtn").onclick=()=>{window.location.href="status.html?id="+encodeURIComponent(r)},window.scrollTo({top:0,
 behavior:"smooth"})}catch(e){console.error(e),toast("Something went wrong. Please try again."),n.disabled=!1,
-n.textContent="Submit Booking"}},$("anotherBtn").onclick=()=>{clearHoldTimer(),reservedIds=[],reservedLockIds=[],reservedBookingId=null,cart.clear(),chosenPayment=null,
+n.textContent="Submit Booking"}},$("anotherBtn").onclick=()=>{clearHoldTimer(),forgetHold(),reservedIds=[],reservedLockIds=[],reservedBookingId=null,cart.clear(),chosenPayment=null,
 receiptData=null,appliedPromo=null,$("voucherInput")&&($("voucherInput").value=""),setVoucherMsg("",!0),
 $("nameInput").value="",$("contactInput").value="",$("emailInput").value="",$("receiptPreview").style.display="none",
 $("uploadBox").querySelector(".big").textContent="☁️ Tap to upload image",$("successView").style.display="none",
