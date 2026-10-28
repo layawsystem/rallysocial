@@ -509,10 +509,28 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
 @media (max-width:900px){.modal.walk-modal{max-width:100%}}
 /* Court-type filter pills, same idea as the booking page. Hidden entirely for
    a venue with no court types. */
-.walk-pills{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
-.walk-pills button{border:1px solid var(--line);background:var(--elev);color:var(--text-2);border-radius:999px;padding:7px 15px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
-.walk-pills button:hover{border-color:var(--brand-l)}
-.walk-pills button.on{background:var(--green);color:var(--btn-tx,#fff);border-color:var(--green)}
+/* Segmented control — identical to the booking page's, so the desk and the
+   website look like one product. */
+.walk-pills{display:flex;align-items:stretch;margin:0 0 12px;padding:5px;gap:0;
+background:var(--elev);border:1px solid var(--open-bd);border-radius:999px;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.walk-pills button{flex:1 1 auto;min-width:0;position:relative;display:flex;align-items:center;justify-content:center;gap:8px;
+border:0;background:transparent;color:var(--text-2);font:inherit;font-weight:700;font-size:13px;
+padding:9px 12px;border-radius:999px;cursor:pointer;white-space:nowrap;
+transition:background .18s ease,color .18s ease}
+.walk-pills button svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;
+stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.walk-pills button span{overflow:hidden;text-overflow:ellipsis}
+.walk-pills button+button::before{content:"";position:absolute;left:0;top:22%;height:56%;width:1px;
+background:var(--line);transition:opacity .18s ease}
+.walk-pills button.on::before,.walk-pills button.on+button::before{opacity:0}
+.walk-pills button:not(.on):hover{color:var(--text)}
+.walk-pills button.on{background:var(--sel-bg);color:var(--sel-tx);box-shadow:0 2px 10px rgba(0,0,0,.35)}
+@media (max-width:760px){
+.walk-pills{padding:4px}
+.walk-pills button{flex-direction:column;gap:5px;padding:8px 4px;font-size:11.5px;border-radius:22px}
+.walk-pills button svg{width:19px;height:19px}
+}
 @supports (height:100dvh){.modal{max-height:calc(100dvh - 32px)}}
 /* Only the overlay and the modal trap scrolling. Applying this to every
    descendant made .table-scroll a dead end: overflow-x:auto forces a computed
@@ -1262,11 +1280,25 @@ let WALK_GROUP=""
 function walkGroupsInUse(){const have=new Set(COURTS.map(c=>c.group||""))
 ;return adminCourtGroups().filter(g=>have.has(g))}
 function walkVisibleCourts(){return WALK_GROUP?COURTS.filter(c=>(c.group||"")===WALK_GROUP):COURTS}
+/* LAYAW-SEG-ICONS — same set and same keyword matching as the booking page. */
+const SEG_ICONS={
+all:'<rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/>',
+court:'<rect x="2.5" y="5" width="19" height="14" rx="1.8"/><path d="M12 5v14"/><path d="M2.5 12h19"/>',
+training:'<circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.8"/><path d="M9.6 2.5h4.8"/><path d="M12 2.5v2.4"/>',
+singles:'<path d="M9.5 9.5 3.8 3.8"/><path d="M14.5 9.5 20.2 3.8"/><ellipse cx="12" cy="14.5" rx="5" ry="6" transform="rotate(45 12 14.5)"/>'}
+function segIcon(name){const n=String(name||"").toLowerCase()
+;if(!n)return SEG_ICONS.all
+;if(/single|solo|1v1/.test(n))return SEG_ICONS.singles
+;if(/train|bay|practice|drill/.test(n))return SEG_ICONS.training
+;return SEG_ICONS.court}
+function segButton(label,isAll){const b=document.createElement("button");b.type="button"
+;b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+(isAll?SEG_ICONS.all:segIcon(label))+'</svg><span></span>'
+;b.querySelector("span").textContent=label;return b}
 function renderWalkPills(){const box=$("walkPills");if(!box)return
 ;const gs=walkGroupsInUse()
 ;if(gs.length<2){box.style.display="none";box.innerHTML="";WALK_GROUP="";return}
 ;box.style.display="flex";box.innerHTML=""
-;const mk=(label,val)=>{const b=document.createElement("button");b.type="button";b.textContent=label
+;const mk=(label,val)=>{const b=segButton(label,val==="")
 ;if(val===WALK_GROUP)b.className="on"
 /* The cart is keyed by court name, so filtering only hides columns - a slot
    already selected in a hidden type stays selected and stays in the total. */
