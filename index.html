@@ -47,6 +47,17 @@ body,html{max-width:100%;overflow-x:hidden}
 body{font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
 img{max-width:100%}
 .wrap{max-width:1180px;margin:0 auto;padding:22px 16px 110px}
+/* Nine courts need ~1140px of table; with the 300px date card, the 320px
+   summary and the gaps that is ~1820px all in. Capped at 96vw so there is
+   always a margin, and only above 1000px — below that the page is a single
+   column and the 1180px shell above is exactly right. */
+@media (min-width:1001px){.wrap{max-width:min(1860px,96vw)}
+/* On a page this wide a logo pinned to the far left looks stranded, with the
+   whole header hugging one corner of the screen. Centre the brand block and
+   its tagline above the three cards. Mobile keeps the left alignment, where
+   the header sits beside the date nav and centring would fight it. */
+.brand{justify-content:center}
+.subline{text-align:center}}
 .brand{display:flex;align-items:center;gap:14px}
 .brand img{width:52px;height:52px;border-radius:12px;object-fit:cover}
 .brand .eyebrow{font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--muted);text-transform:uppercase}
@@ -58,7 +69,37 @@ img{max-width:100%}
 .hero-dots{position:absolute;bottom:12px;left:0;right:0;display:flex;gap:7px;justify-content:center;z-index:2}
 .hero-dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5)}
 .hero-dots span.on{background:#fff}
-.grid-layout{display:grid;grid-template-columns:300px 1fr 320px;gap:18px;margin-top:18px;align-items:start}
+/* The middle track follows --slots-w, which sizeSlotsCard() sets from the
+   grid's measured width; it falls back to 1fr before the first render and on
+   any layout where the script has not run. Centred, so the row stays balanced
+   when a single court type is filtered to and the card gets narrow.
+
+   The width glides rather than snapping. The curve is the one iOS uses for
+   sheets — a fast start that settles rather than easing evenly, which is what
+   makes it feel like the panel has weight instead of being tweened.
+   grid-template-columns cannot interpolate px against fr, so the very first
+   change after load snaps and every change after that animates; browsers
+   without track interpolation simply snap throughout, which is how this
+   behaved before. */
+.grid-layout{display:grid;grid-template-columns:300px minmax(0,1fr) 320px;gap:18px;margin-top:18px;align-items:start;justify-content:center}
+/* Registering the property is what makes the width animatable. Transitioning
+   grid-template-columns through an unregistered custom property does not
+   interpolate at all — the computed track froze at the old width and never
+   reached the new one. */
+@property --slots-w{syntax:"<length>";inherits:false;initial-value:0px}
+/* Only read once JS has a real width to give it, so the 0px initial value is
+   never painted — and only above 1000px. A class selector outranks the plain
+   .grid-layout in the max-width:1000px block, so without this guard the class
+   followed a resized-down window onto the single-column layout and pinned the
+   middle track to the registered initial value: a 0px column and no grid. */
+@media (min-width:1001px){
+.grid-layout.slots-sized{grid-template-columns:300px minmax(0,var(--slots-w,1fr)) 320px}
+}
+/* The curve iOS uses for sheets: a fast start that settles, so the panel feels
+   like it has weight. Added a frame after the first sizing, so the card does
+   not grow out of nothing on load. */
+.grid-layout.slots-anim{transition:--slots-w .46s cubic-bezier(.32,.72,0,1)}
+@media (prefers-reduced-motion:reduce){.grid-layout.slots-anim{transition:none}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
 .card h3{font-size:16px;font-weight:800;color:var(--text);margin-bottom:14px}
 .card h3.sm{font-size:14px;margin-bottom:12px}
@@ -1120,7 +1161,44 @@ afterCartChange()}):cart.has(n)?(i.className+=" cell-selected",i.textContent="Se
    up selecting a slot that is already taken. */
 afterCartChange()}):(i.className+=" cell-loading",i.textContent="…"),t.appendChild(i),r.appendChild(t)}),e.appendChild(r)})
 ;dropped&&(updateSummary(),renderCalendar(),toast(1===dropped?"A slot you picked was just taken — removed from your selection":dropped+" slots you picked were just taken — removed from your selection"))
-}function afterCartChange(){renderGrid(),
+;sizeSlotsCard()}/* Set the middle grid track to the width the visible courts actually need.
+   Called at the end of renderGrid, so it follows the court-type filter. */
+function sizeSlotsCard(){try{
+const layout=document.querySelector(".grid-layout");if(!layout)return
+/* Phones stack to one column and ignore the property; measuring there would
+   only fight the media query. */
+;if(window.innerWidth<=1000){layout.style.removeProperty("--slots-w");return}
+;const sc=document.querySelector(".table-scroll"),tbl=sc&&sc.querySelector("table.slots");if(!tbl)return
+/* scrollWidth is what the table wants, whatever the column widths work out to.
+   Add the card's own horizontal padding and borders so the grid is not clipped. */
+;const card=sc.closest(".card");let chrome=0
+;if(card){const cs=getComputedStyle(card)
+;chrome=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight)+parseFloat(cs.borderLeftWidth)+parseFloat(cs.borderRightWidth)}
+/* table.slots carries min-width:100%, so its scrollWidth is always just the
+   container width — measuring it to size the container is circular and the
+   card never changed. Drop that floor for one synchronous read to get the
+   width the columns genuinely want, then put it straight back; nothing is
+   painted in between. */
+;const prevMin=tbl.style.minWidth;tbl.style.minWidth="0"
+;const natural=Math.ceil(tbl.scrollWidth);tbl.style.minWidth=prevMin
+/* The scroller has a vertical scrollbar of its own above 1000px
+   (max-height + overflow-y:auto), and that gutter eats into the width the
+   table gets. Without it the track came out ~15px short and the grid still
+   scrolled sideways by exactly that much. offsetWidth-clientWidth covers the
+   scrollbar and the scroller borders in one measurement. */
+;const gutter=Math.max(0,sc.offsetWidth-sc.clientWidth)
+;const want=natural+chrome+gutter+1
+/* Floor: the heading, the info bar and the four-segment filter still have to
+   read properly when only one court is showing. Ceiling: whatever is left of
+   the page once the two side cards and the gaps are taken. */
+;const FLOOR=560
+;const side=300+320+36+2
+;const room=Math.max(FLOOR,document.querySelector(".wrap").clientWidth-side)
+;layout.style.setProperty("--slots-w",Math.max(FLOOR,Math.min(want,room))+"px")
+;if(!layout.classList.contains("slots-sized")){layout.classList.add("slots-sized")
+;setTimeout(()=>{try{layout.classList.add("slots-anim")}catch(e){}},60)}}catch(e){}}
+;addEventListener("resize",()=>{try{sizeSlotsCard()}catch(e){}})
+function afterCartChange(){renderGrid(),
 updateSummary(),renderCalendar()}function cartTotal(){let e=0;return cart.forEach(t=>{const p=t.split("|")
 ;e+=slotCost(hm2min(p[2]),p[1])}),e}function promoQualifies(e,t,o){const n=parseDstr(t).getDay()
 ;if(Array.isArray(e.days)&&e.days.length&&!e.days.includes(n))return!1
