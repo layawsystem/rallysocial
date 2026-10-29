@@ -86,20 +86,26 @@ img{max-width:100%}
    grid-template-columns through an unregistered custom property does not
    interpolate at all — the computed track froze at the old width and never
    reached the new one. */
-@property --slots-w{syntax:"<length>";inherits:false;initial-value:0px}
+/* inherits:true because the hero is a sibling of the grid, not a child — both
+   read this from .wrap. */
+@property --slots-w{syntax:"<length>";inherits:true;initial-value:0px}
 /* Only read once JS has a real width to give it, so the 0px initial value is
    never painted — and only above 1000px. A class selector outranks the plain
    .grid-layout in the max-width:1000px block, so without this guard the class
    followed a resized-down window onto the single-column layout and pinned the
    middle track to the registered initial value: a 0px column and no grid. */
 @media (min-width:1001px){
-.grid-layout.slots-sized{grid-template-columns:300px minmax(0,var(--slots-w,1fr)) 320px}
+.wrap.slots-sized .grid-layout{grid-template-columns:300px minmax(0,var(--slots-w,1fr)) 320px}
+/* The banner takes the same width as the slots card and centres over it. Left
+   full-bleed it was 7.8:1 against a 4:1 image and cover cropped the logo away. */
+.wrap.slots-sized #heroWrap{width:var(--slots-w,100%);margin-right:0;
+margin-left:max(0px,calc((100% - var(--slots-w) - 656px)/2 + 318px))}
 }
 /* The curve iOS uses for sheets: a fast start that settles, so the panel feels
    like it has weight. Added a frame after the first sizing, so the card does
    not grow out of nothing on load. */
-.grid-layout.slots-anim{transition:--slots-w .46s cubic-bezier(.32,.72,0,1)}
-@media (prefers-reduced-motion:reduce){.grid-layout.slots-anim{transition:none}}
+.wrap.slots-anim{transition:--slots-w .46s cubic-bezier(.32,.72,0,1)}
+@media (prefers-reduced-motion:reduce){.wrap.slots-anim{transition:none}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
 .card h3{font-size:16px;font-weight:800;color:var(--text);margin-bottom:14px}
 .card h3.sm{font-size:14px;margin-bottom:12px}
@@ -1167,7 +1173,9 @@ function sizeSlotsCard(){try{
 const layout=document.querySelector(".grid-layout");if(!layout)return
 /* Phones stack to one column and ignore the property; measuring there would
    only fight the media query. */
-;if(window.innerWidth<=1000){layout.style.removeProperty("--slots-w");return}
+;if(window.innerWidth<=1000){const h=document.querySelector(".wrap")
+;if(h){h.style.removeProperty("--slots-w");h.classList.remove("slots-sized","slots-anim")}
+;return}
 ;const sc=document.querySelector(".table-scroll"),tbl=sc&&sc.querySelector("table.slots");if(!tbl)return
 /* scrollWidth is what the table wants, whatever the column widths work out to.
    Add the card's own horizontal padding and borders so the grid is not clipped. */
@@ -1194,9 +1202,12 @@ const layout=document.querySelector(".grid-layout");if(!layout)return
 ;const FLOOR=560
 ;const side=300+320+36+2
 ;const room=Math.max(FLOOR,document.querySelector(".wrap").clientWidth-side)
-;layout.style.setProperty("--slots-w",Math.max(FLOOR,Math.min(want,room))+"px")
-;if(!layout.classList.contains("slots-sized")){layout.classList.add("slots-sized")
-;setTimeout(()=>{try{layout.classList.add("slots-anim")}catch(e){}},60)}}catch(e){}}
+/* On .wrap, not .grid-layout: the hero is a sibling of the grid, so only a
+   shared ancestor can hand the width to both. */
+;const host=document.querySelector(".wrap")
+;host.style.setProperty("--slots-w",Math.max(FLOOR,Math.min(want,room))+"px")
+;if(!host.classList.contains("slots-sized")){host.classList.add("slots-sized")
+;setTimeout(()=>{try{host.classList.add("slots-anim")}catch(e){}},60)}}catch(e){}}
 ;addEventListener("resize",()=>{try{sizeSlotsCard()}catch(e){}})
 function afterCartChange(){renderGrid(),
 updateSummary(),renderCalendar()}function cartTotal(){let e=0;return cart.forEach(t=>{const p=t.split("|")
