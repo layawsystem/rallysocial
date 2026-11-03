@@ -1600,7 +1600,7 @@ catch(e){console.warn("block notes load failed",e)}}
 
 ;function openCourtModal(court){CAV_COURT=court;
 $("courtModalTitle").textContent=court.name+(court.type?" ("+court.type+")":"");
-renderCavStatus();$("cavDate").value="";$("cavNote").value="";$("cavBulkNote").value="";wireLabelPicker("cavLabel","cavLabelOther");wireLabelPicker("cavBulkLabel","cavBulkLabelOther");wireLabelPicker("mcLabel","mcLabelOther");resetLabelPicker("cavLabel","cavLabelOther","cavPopup");resetLabelPicker("cavBulkLabel","cavBulkLabelOther","cavBulkPopup");renderCavSlots();renderCavBlocks();loadBlockNotesForCourt(court.id).then(renderCavBlocks);
+renderCavStatus();$("cavDate").value="";$("cavNote").value="";$("cavBulkNote").value="";wireLabelPicker("cavLabel","cavLabelOther");wireLabelPicker("cavBulkLabel","cavBulkLabelOther");resetLabelPicker("cavLabel","cavLabelOther","cavPopup");resetLabelPicker("cavBulkLabel","cavBulkLabelOther","cavBulkPopup");renderCavSlots();renderCavBlocks();loadBlockNotesForCourt(court.id).then(renderCavBlocks);
 $("cavBulkStart").value="";$("cavBulkEnd").value="";renderBulkSlots();
 $("courtOverlay").classList.add("show")}
 function closeCourtModal(){$("courtOverlay").classList.remove("show");CAV_COURT=null}
@@ -1693,7 +1693,10 @@ const n=dstr(new Date(viewYear,viewMonth,t)),a=document.createElement("div");a.c
 n===selectedDate&&a.classList.add("active"),a.onclick=()=>{selectedDate=n,renderCalendar(),watchDay()},e.appendChild(a)}
 }
 /* ── Block multiple courts ─────────────────────────────────────────── */
-function openMultiCourt(){renderMcCourts();renderMcSlots();
+function openMultiCourt(){
+/* Wired here, not in openCourtModal: this picker belongs to this modal, and
+   going straight to "Block multiple courts" used to leave it dead. */
+wireLabelPicker("mcLabel","mcLabelOther");renderMcCourts();renderMcSlots();
 $("mcStart").value="";$("mcEnd").value="";syncMcButtons();
 $("multiCourtOverlay").classList.add("show")}
 function closeMultiCourt(){$("multiCourtOverlay").classList.remove("show")}
