@@ -108,7 +108,19 @@ to{opacity:1;transform:none}
 }
 .dash-greet h2{font-size:26px;font-weight:800;color:var(--text)}
 .dash-greet{margin-bottom:20px}
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+/* LAYAW-DASH-SCOPE — one track, the active half filled, same idiom as the
+   court-type filter on the booking page. */
+.dash-scope{display:inline-flex;align-items:stretch;margin:0 0 14px;padding:4px;gap:0;
+background:var(--elev);border:1px solid var(--line);border-radius:999px}
+.dash-scope button{position:relative;display:flex;align-items:center;gap:7px;border:0;background:transparent;
+color:var(--text-2);font:inherit;font-weight:700;font-size:12.5px;padding:8px 16px;border-radius:999px;
+cursor:pointer;white-space:nowrap;transition:background .18s ease,color .18s ease}
+.dash-scope button+button::before{content:"";position:absolute;left:0;top:24%;height:52%;width:1px;
+background:var(--line);transition:opacity .18s ease}
+.dash-scope button.on::before,.dash-scope button.on+button::before{opacity:0}
+.dash-scope button:not(.on):hover{color:var(--text)}
+.dash-scope button.on{background:var(--sel-bg);color:var(--sel-tx)}
+.kpi-grid
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;display:flex;gap:14px}
 .kpi-ico{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;flex-shrink:0}
 .kpi-ico svg{width:23px;height:23px}
@@ -837,7 +849,10 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <button id="signoutBtn">Sign out</button>
 </div> </div> </header> <div class="content"> <section id="sec-dashboard" class="sec show"> <div class="dash-greet">
 <h2 id="greetText">Welcome back! 👋</h2>
-<p class="muted-sub">Here's your club's overview for today.</p>
+<p class="muted-sub" id="greetSub">Here's your club's overview for today.</p>
+</div> <div class="dash-scope" id="dashScope">
+<button type="button" id="scopeToday" class="on">Today</button>
+<button type="button" id="scopeAhead">Upcoming</button>
 </div> <div class="kpi-grid"> <div class="kpi">
 <div class="kpi-ico rev">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -890,7 +905,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 </div>
 </div>
 </div> </div> <div class="dash-row2"> <div class="card"> <div class="card-head">
-<h3>Revenue (This Month)</h3> <select class="sel" id="revMonthSel">
+<h3 id="revChartTitle">Revenue (This Month)</h3> <select class="sel" id="revMonthSel">
 <option value="0">This Month</option>
 <option value="1">Last Month</option>
 </select> </div> <div class="rev-total" id="revTotal">₱0</div> <div id="revChart">
@@ -1505,16 +1520,53 @@ l+='<circle cx="'+a(t).toFixed(1)+'" cy="'+o(e[t].value).toFixed(1)+'" r="3.5" f
 ;r+='<rect x="'+d.toFixed(1)+'" y="'+u.toFixed(1)+'" width="'+s.toFixed(1)+'" height="'+Math.max(2,l).toFixed(1)+'" rx="5" fill="'+(((m=e.value)>=.66*a?"var(--chart-d)":m>=.33*a?"var(--chart)":"var(--chart-l)")+'"><title>')+e.label+": "+e.value+" booking(s)</title></rect>",
 (n<=12||c%2==0)&&(i+='<text x="'+(t+c*o+o/2).toFixed(1)+'" y="230" text-anchor="middle" font-size="10" fill="var(--muted)">'+e.label+"</text>")
 })
-;return'<svg viewBox="0 0 720 240" width="100%" style="display:block">'+('<text x="40" y="24" text-anchor="end" font-size="11" fill="var(--muted)">High</text><text x="40" y="'+111..toFixed(1)+'" text-anchor="end" font-size="11" fill="var(--muted)">Med</text><text x="40" y="206" text-anchor="end" font-size="11" fill="var(--muted)">Low</text>')+r+i+"</svg>"
-}async function renderDashboard(){
+;return'<svg viewBox="0 0 720 240" width="100%" style="display:block">'+('<text x="40" y="24" text-anchor="end" font-size="11" fill="var(--muted)">High</text><text x="40" y="'+111..toFixed(1)+'" text-anchor="end" font-size="11" fill="var(--muted)">Med</text><text x="40" y="206" text-anchor="end" font-size="11" fill="var(--muted)">Low</text>')+r+i+"</svg>"}
+ /* "" is today-only; "ahead" is today onward. Dates are YYYY-MM-DD, so a plain
+   string compare is a date compare. */
+let DASH_SCOPE="today"
+/* A reserved doc is an abandoned checkout, not a booking. */
+function realBooking(b){return b.status!=="cancelled"&&b.status!=="reserved"}
+function fromToday(b){return String(b.date||"")>=dstr(today())}
+function aheadRev(){let t=0;ALLB.forEach(b=>{if("confirmed"===b.status&&fromToday(b))t+=Number(b.amount||0)});return t}
+function aheadOrders(){return orderGroups(ALLB.filter(b=>fromToday(b)&&realBooking(b))).length}
+function aheadDays(){return new Set(ALLB.filter(b=>fromToday(b)&&realBooking(b)).map(b=>b.date)).size}
+function wireDashScope(){const a=$("scopeToday"),b=$("scopeAhead");if(!a||!b)return
+;a.onclick=()=>{DASH_SCOPE="today";renderDashboard()}
+;b.onclick=()=>{DASH_SCOPE="ahead";renderDashboard()}}
+async function renderDashboard(){
 const e=(new Date).getHours(),t=e<12?"Good morning":e<18?"Good afternoon":"Good evening"
 ;$("greetText").textContent=t+", Owner! 👋",await ensureAnalytics();const n=dstr(today()),a=dstr(addDays(today(),-1))
-;$("kTodayRev").textContent=peso(dayRev(n)),$("kTodayRevD").innerHTML=deltaHtml(dayRev(n),dayRev(a)),
-$("kTodayBk").textContent=dayOrders(n),$("kTodayBkD").innerHTML=deltaHtml(dayOrders(n),dayOrders(a)),
-$("kPending").textContent=orderGroups(PENDING).length,$("kOcc").textContent=occupancy(n)+"%"
-;const o=occupancy(n)-occupancy(a)
-;$("kOccD").innerHTML=o>0?'<span class="up">▲ '+o+"%</span> vs yesterday":o<0?'<span class="down">▼ '+Math.abs(o)+"%</span> vs yesterday":"<span>—</span> vs yesterday",
+;wireDashScope()
+;const ahead="ahead"===DASH_SCOPE
+;$("scopeToday").classList.toggle("on",!ahead);$("scopeAhead").classList.toggle("on",ahead)
+;$("greetSub")&&($("greetSub").textContent=ahead
+?"Everything booked from today onward."
+:"Here's your club's overview for today.")
+;const kl=document.querySelectorAll(".kpi .kl")
+;if(kl[0])kl[0].textContent=ahead?"Upcoming Revenue":"Today's Revenue"
+;if(kl[1])kl[1].textContent=ahead?"Upcoming Bookings":"Today's Bookings"
+;if(kl[3])kl[3].textContent=ahead?"Days With Bookings":"Occupancy Rate"
+;$("kTodayRev").textContent=peso(ahead?aheadRev():dayRev(n))
+;$("kTodayBk").textContent=ahead?aheadOrders():dayOrders(n)
+;$("kPending").textContent=orderGroups(PENDING).length
+;$("kOcc").textContent=ahead?aheadDays():occupancy(n)+"%"
+/* Nothing to compare a forward view against, so the deltas go quiet. */
+;$("kTodayRevD").innerHTML=ahead?"":deltaHtml(dayRev(n),dayRev(a))
+;$("kTodayBkD").innerHTML=ahead?"":deltaHtml(dayOrders(n),dayOrders(a))
+;const o=ahead?0:occupancy(n)-occupancy(a)
+;$("kOccD").innerHTML=ahead?"dates with at least one booking":o>0?'<span class="up">▲ '+o+"%</span> vs yesterday":o<0?'<span class="down">▼ '+Math.abs(o)+"%</span> vs yesterday":"<span>—</span> vs yesterday",
 renderRevenueChart(),renderTimeChart(),renderCourtStatus(),renderRecent()}function renderRevenueChart(){
+/* Ahead: the next 30 days by date, which is the picture of what is already
+   sold. The month picker has no meaning there, so it is hidden. */
+if("ahead"===DASH_SCOPE){const sel=$("revMonthSel");if(sel)sel.style.display="none"
+;const head=$("revChartTitle");if(head)head.textContent="Revenue (Next 30 Days)"
+;const rows=[];let tot=0
+;for(let i=0;i<30;i++){const d=dstr(addDays(today(),i)),v=dayRev(d)
+;tot+=v;rows.push({label:String(Number(d.slice(8,10))),value:v})}
+;$("revTotal").textContent=peso(tot)
+;$("revChart").innerHTML=rows.length?lineChart(rows):'<div class="empty">No data yet.</div>';return}
+{const sel=$("revMonthSel");if(sel)sel.style.display=""
+;const head=$("revChartTitle");if(head)head.textContent="Revenue (This Month)"}
 const e=Number($("revMonthSel").value||0),t=new Date(today().getFullYear(),today().getMonth()-e,1),n=t.getFullYear(),a=t.getMonth(),o=new Date(n,a+1,0).getDate(),s=0===e?today().getDate():o,r=[]
 ;for(let e=1;e<=s;e++){const t=n+"-"+pad2(a+1)+"-"+pad2(e);r.push({label:String(e),value:dayRev(t)})}let i=0
 ;r.forEach(e=>i+=e.value),
