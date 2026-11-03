@@ -70,6 +70,14 @@ input:focus{outline:2px solid var(--green);border-color:var(--green)}
 .signout{background:rgba(255,255,255,.14);color:#fff;border:none;padding:10px 14px;border-radius:10px;font:inherit;font-weight:600;cursor:pointer}
 .signout:hover{background:rgba(255,255,255,.24)}
 .container{max-width:1040px;margin:0 auto;padding:18px 16px 60px}
+/* LAYAW-ADMIN-WIDTH — an unregistered custom property does not interpolate, so
+   without this the page would jump between widths instead of easing. */
+@property --sched-w{syntax:"<length>";inherits:true;initial-value:0px}
+@media (min-width:1100px){
+.container.sched-sized{max-width:min(calc(100vw - 32px),max(1040px,var(--sched-w,1040px)))}
+}
+.container.sched-anim{transition:--sched-w .46s cubic-bezier(.32,.72,0,1)}
+@media (prefers-reduced-motion:reduce){.container.sched-anim{transition:none}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
 .card h3{font-size:16px;font-weight:800;color:var(--text);margin-bottom:14px}
 .cal-nav{display:flex;gap:8px;align-items:center;margin-bottom:12px}
@@ -1178,6 +1186,30 @@ function schedGroupsInUse(){const seen=[],out=[]
 ;COURTS.forEach(c=>{const g=(c.group||"").trim();if(g&&seen.indexOf(g)<0){seen.push(g);out.push(g)}})
 ;return out}
 function schedCourts(){return SCHED_GROUP?COURTS.filter(c=>(c.group||"")===SCHED_GROUP):COURTS}
+/* Width the page needs to show the courts currently on screen. Mirrors
+   sizeSlotsCard() on the booking page, including the measuring trick. */
+function sizeSchedCard(){try{
+const box=document.querySelector(".container");if(!box)return
+;const grid=$("gridView"),showing=grid&&"none"!==grid.style.display
+;if(window.innerWidth<1100||!showing){
+box.style.removeProperty("--sched-w");box.classList.remove("sched-sized","sched-anim");return}
+;const sc=grid.querySelector(".table-scroll"),tbl=sc&&sc.querySelector("table.sched");if(!tbl)return
+/* min-width:100% makes an in-place measurement circular — it would report the
+   width of the box doing the asking. */
+;const keep=tbl.style.minWidth;tbl.style.minWidth="0"
+;const intrinsic=tbl.scrollWidth;tbl.style.minWidth=keep
+;const gutter=sc.offsetWidth-sc.clientWidth
+;const card=sc.closest(".card");let chrome=0
+;if(card){const cs=getComputedStyle(card)
+;chrome=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight)+parseFloat(cs.borderLeftWidth)+parseFloat(cs.borderRightWidth)}
+/* 320px left column + 16px gap + the container's own 16px each side. */
+;const need=Math.ceil(intrinsic+gutter+chrome+336+32)
+;box.style.setProperty("--sched-w",need+"px");box.classList.add("sched-sized")
+/* Arm the transition only after the first size has landed, so the page does
+   not ease out from zero on load. */
+;setTimeout(()=>box.classList.add("sched-anim"),40)
+}catch(e){}}
+addEventListener("resize",()=>{try{sizeSchedCard()}catch(e){}})
 function renderSchedPills(){const box=$("schedPills");if(!box)return
 ;const gs=schedGroupsInUse()
 /* One type is no choice at all, and a venue with untyped courts has nothing to
@@ -1186,7 +1218,7 @@ function renderSchedPills(){const box=$("schedPills");if(!box)return
 ;box.style.display="flex";box.innerHTML=""
 ;const mk=(label,val)=>{const b=segButton(label,val==="")
 ;if(val===SCHED_GROUP)b.className="on"
-;b.onclick=()=>{SCHED_GROUP=val;renderSchedPills();renderSchedHead();renderGrid()}
+;b.onclick=()=>{SCHED_GROUP=val;renderSchedPills();renderSchedHead();renderGrid();sizeSchedCard()}
 ;box.appendChild(b)}
 ;mk("All","");gs.forEach(g=>mk(g,g))}
 function renderSchedHead(){const t=$("schedHead");t.innerHTML="";const e=document.createElement("th")
@@ -1201,7 +1233,7 @@ var BLOCK_NOTES={}
 ;function isCourtBlocked(court,date,slotKey){return!!court&&Array.isArray(court.blocks)&&court.blocks.some(b=>b&&b.date===date&&Array.isArray(b.slots)&&b.slots.includes(slotKey))}
 function bkRank(e){return"confirmed"===e.status?3:"pending"===e.status?2:"reserved"===e.status?1:0}
 function renderGrid(){if(!SETTINGS||!COURTS.length)return void($("schedBody").innerHTML="")
-;renderSchedPills()
+;renderSchedPills();setTimeout(sizeSchedCard,0)
 ;const t=buildSlots(),e=Number(SETTINGS.slotMinutes??60),n={};DAY.forEach(t=>{
 isLiveBooking(t)&&(t.slots||[]).forEach(e=>{const k=t.court+"|"+e;if(!n[k]||bkRank(t)>bkRank(n[k]))n[k]=t})});const a={},o={};COURTS.forEach(e=>{a[e.name]={},
 o[e.name]=new Set;let s=0;for(;s<t.length;){const i=n[e.name+"|"+t[s].key];if(!i){s++;continue}let c=s+1

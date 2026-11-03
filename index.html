@@ -188,6 +188,9 @@ table.slots .time-cell{font-size:13px;font-weight:700;color:var(--text);padding:
    and takes no taps; the message on top is the only thing to read. */
 .cell-closed{background:var(--past-bg);cursor:not-allowed;box-shadow:inset 0 0 0 1px var(--past-bd);opacity:.5}
 .grid-wrap{position:relative}
+/* An author display wins over the UA's [hidden] rule, so the hiding has to be
+   written out or the notice never goes away. */
+.day-closed[hidden]{display:none}
 .grid-wrap.closed .table-scroll{pointer-events:none;user-select:none;filter:saturate(.25);
 max-height:min(430px,54vh);overflow:hidden;
 -webkit-mask-image:linear-gradient(#000 62%,transparent);mask-image:linear-gradient(#000 62%,transparent)}
