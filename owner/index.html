@@ -1538,6 +1538,9 @@ function saleDay(b){const c=b&&b.createdAt;if(!c)return""
 function salesOn(d){let t=0;ALLB.forEach(b=>{if("confirmed"===b.status&&saleDay(b)===d)t+=Number(b.amount||0)});return t}
 /* Orders that landed on one date, for the count beside the money. */
 function salesOrders(d){return orderGroups(ALLB.filter(b=>realBooking(b)&&saleDay(b)===d)).length}
+/* inMonth's twin, on the day the money arrived instead of the day played. */
+function inSaleMonth(b,back){const d=new Date(today().getFullYear(),today().getMonth()-back,1)
+;return saleDay(b).startsWith(d.getFullYear()+"-"+pad2(d.getMonth()+1))}
 function aheadOrders(){return orderGroups(ALLB.filter(b=>fromToday(b)&&realBooking(b))).length}
 function aheadDays(){return new Set(ALLB.filter(b=>fromToday(b)&&realBooking(b)).map(b=>b.date)).size}
 function wireDashScope(){const a=$("scopeToday"),b=$("scopeAhead");if(!a||!b)return
@@ -2009,11 +2012,11 @@ $("repGrid").innerHTML='<div class="empty">Loading…</div>',await ensureAnalyti
 const n=Math.floor(hm2min(e)/60);t[n]=(t[n]||0)+1}));const n=Object.entries(t).map(([e,t])=>({h:+e,n:t
 })).sort((e,t)=>t.n-e.n).slice(0,5),a=Math.max(1,...n.map(e=>e.n)),o={};e.forEach(e=>{const t=e.court||"—";o[t]||(o[t]={
 c:t,rev:0,slots:0}),o[t].slots+=(e.slots||[]).length,"confirmed"===e.status&&(o[t].rev+=Number(e.amount||0))})
-;const s=Object.values(o).sort((e,t)=>t.rev-e.rev),r=Math.max(1,...s.map(e=>e.rev)),i=confRev(ALLB.filter(e=>inMonth(e,0))),c=confRev(ALLB.filter(e=>inMonth(e,1))),d=c>0?Math.round((i-c)/c*100):i>0?100:0,l=buildCustomers(),u=l.filter(e=>e.orders>1).length,m=l.length?Math.round(u/l.length*100):0,p=function(){
+;const s=Object.values(o).sort((e,t)=>t.rev-e.rev),r=Math.max(1,...s.map(e=>e.rev)),i=confRev(ALLB.filter(e=>inSaleMonth(e,0))),c=confRev(ALLB.filter(e=>inSaleMonth(e,1))),d=c>0?Math.round((i-c)/c*100):i>0?100:0,l=buildCustomers(),u=l.filter(e=>e.orders>1).length,m=l.length?Math.round(u/l.length*100):0,p=function(){
 const e=buildSlots().length,t=today().getDate(),n=(COURTS.length||1)*e*t;let a=0;return ALLB.forEach(e=>{
 "cancelled"!==e.status&&inMonth(e,0)&&(a+=(e.slots||[]).length)}),n?Math.min(100,Math.round(a/n*100)):0
 }(),h=n.length?n.map(e=>'<div class="barline"><span class="bl-l">'+hourLabel(60*e.h)+'</span><span class="bl-track"><span class="bl-fill" style="width:'+e.n/a*100+'%"></span></span><span class="bl-v">'+e.n+"</span></div>").join(""):'<div class="empty">No data yet.</div>',v=s.length?s.map(e=>'<div class="barline"><span class="bl-l">'+esc(e.c)+'</span><span class="bl-track"><span class="bl-fill" style="width:'+e.rev/r*100+'%"></span></span><span class="bl-v">'+peso(e.rev)+"</span></div>").join(""):'<div class="empty">No data yet.</div>'
-;$("repGrid").innerHTML='<div class="card"><div class="card-head"><h3>Revenue trend</h3></div><div class="big-stat">'+peso(i)+'</div><div class="big-sub">This month '+(d>=0?'<span style="color:var(--pos);font-weight:700">▲ '+d+"%</span>":'<span style="color:var(--cancel);font-weight:700">▼ '+Math.abs(d)+"%</span>")+" vs last month ("+peso(c)+')</div></div><div class="card"><div class="card-head"><h3>Occupancy (this month)</h3></div><div class="big-stat">'+p+'%</div><div class="big-sub">of court-hours booked so far this month</div></div><div class="card"><div class="card-head"><h3>Peak hours</h3></div>'+h+'</div><div class="card"><div class="card-head"><h3>Court performance</h3></div>'+v+'</div><div class="card"><div class="card-head"><h3>Customer retention</h3></div><div class="big-stat">'+m+'%</div><div class="big-sub">'+u+" of "+l.length+' players have booked more than once</div></div><div class="card"><div class="card-head"><h3>Total players</h3></div><div class="big-stat">'+l.length+'</div><div class="big-sub">unique players in the last 90 days</div></div>'
+;$("repGrid").innerHTML='<div class="card"><div class="card-head"><h3>Sales trend</h3></div><div class="big-stat">'+peso(i)+'</div><div class="big-sub">Received this month '+(d>=0?'<span style="color:var(--pos);font-weight:700">▲ '+d+"%</span>":'<span style="color:var(--cancel);font-weight:700">▼ '+Math.abs(d)+"%</span>")+" vs last month ("+peso(c)+')</div></div><div class="card"><div class="card-head"><h3>Occupancy (this month)</h3></div><div class="big-stat">'+p+'%</div><div class="big-sub">of court-hours booked so far this month</div></div><div class="card"><div class="card-head"><h3>Peak hours</h3></div>'+h+'</div><div class="card"><div class="card-head"><h3>Court performance</h3></div>'+v+'</div><div class="card"><div class="card-head"><h3>Customer retention</h3></div><div class="big-stat">'+m+'%</div><div class="big-sub">'+u+" of "+l.length+' players have booked more than once</div></div><div class="card"><div class="card-head"><h3>Total players</h3></div><div class="big-stat">'+l.length+'</div><div class="big-sub">unique players in the last 90 days</div></div>'
 }function openSupport(e){
 $("supTitle").textContent=e,$("supText").textContent=e+" is a premium Layaw System feature that isn't enabled for your club yet."
 ;let t="";const n=SETTINGS||{},a=n.supportName||"Layaw System"
@@ -2224,8 +2227,8 @@ return'<div class="kpi-ico '+e+'"><svg viewBox="0 0 24 24" fill="none" stroke="c
 return'<div class="kpi">'+payIcon(n)+'<div class="kpi-body"><div class="kl">'+e+'</div><div class="kn">'+t+"</div>"+(a?'<div class="kd">'+a+"</div>":"")+"</div></div>"
 }async function renderPayments(){$("payByMethod").innerHTML='<div class="empty">Loading…</div>',await ensureAnalytics(),
 await ensureAllContacts()
-;const e=ALLB.filter(e=>"confirmed"===e.status),t=e.reduce((e,t)=>e+Number(t.amount||0),0),n=orderGroups(ALLB.filter(e=>"pending"===e.status)),a=ALLB.filter(e=>"pending"===e.status).reduce((e,t)=>e+Number(t.amount||0),0),o=confRev(ALLB.filter(e=>inMonth(e,0))),s=confRev(ALLB.filter(e=>inMonth(e,1)))
-;$("payKpis").innerHTML=payKpi("Total revenue (90d)",peso(t),"rev")+payKpi("This month",peso(o),"bk")+payKpi("Pending amount",peso(a),"pend",n.length+" order"+(1===n.length?"":"s"))+payKpi("Transactions",String(e.length),"occ")
+;const e=ALLB.filter(e=>"confirmed"===e.status),t=e.reduce((e,t)=>e+Number(t.amount||0),0),n=orderGroups(ALLB.filter(e=>"pending"===e.status)),a=ALLB.filter(e=>"pending"===e.status).reduce((e,t)=>e+Number(t.amount||0),0),o=confRev(ALLB.filter(e=>inSaleMonth(e,0))),s=confRev(ALLB.filter(e=>inSaleMonth(e,1)))
+;$("payKpis").innerHTML=payKpi("Total revenue (90d)",peso(t),"rev")+payKpi("Received this month",peso(o),"bk")+payKpi("Pending amount",peso(a),"pend",n.length+" order"+(1===n.length?"":"s"))+payKpi("Transactions",String(e.length),"occ")
 ;const r={};(SETTINGS.paymentMethods||[]).concat(["Cash"]).forEach(e=>{e&&!(e in r)&&(r[e]=0)}),e.forEach(e=>{
 const t=e.paymentMethod||"Other";r[t]=(r[t]||0)+Number(e.amount||0)})
 ;const i=Object.entries(r).sort((e,t)=>t[1]-e[1]),c=Math.max(1,...i.map(e=>e[1]))
