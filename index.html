@@ -183,6 +183,24 @@ table.slots .time-cell{font-size:13px;font-weight:700;color:var(--text);padding:
 .cell-past{background:var(--past-bg);color:var(--past-tx);cursor:not-allowed;box-shadow:inset 0 0 0 1px var(--past-bd)}
 .cell-blocked{background:#3a2416;color:#E0954A;cursor:not-allowed;box-shadow:inset 0 0 0 1px #6b4420}
 .cell-loading{background:var(--past-bg);color:var(--past-tx);cursor:progress;box-shadow:inset 0 0 0 1px var(--past-bd);opacity:.55}
+/* LAYAW-CLOSED-DAY — the whole venue is shut for this date. The grid stays
+   visible as texture so the page does not look broken, but it carries no text
+   and takes no taps; the message on top is the only thing to read. */
+.cell-closed{background:var(--past-bg);cursor:not-allowed;box-shadow:inset 0 0 0 1px var(--past-bd);opacity:.5}
+.grid-wrap{position:relative}
+.grid-wrap.closed .table-scroll{pointer-events:none;user-select:none;filter:saturate(.25);
+max-height:min(430px,54vh);overflow:hidden;
+-webkit-mask-image:linear-gradient(#000 62%,transparent);mask-image:linear-gradient(#000 62%,transparent)}
+.day-closed{position:absolute;inset:0;z-index:3;display:grid;place-items:center;padding:24px;text-align:center;
+background:color-mix(in srgb,var(--bg,#101013) 74%,transparent);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+border-radius:14px;animation:dcIn .32s cubic-bezier(.32,.72,0,1) both}
+@keyframes dcIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
+.day-closed .dc-in{max-width:380px;background:linear-gradient(var(--card),var(--card)),var(--bg,#101013);border:1px solid var(--line);
+border-radius:14px;padding:20px 22px;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.day-closed .dc-t{margin:0 0 7px;font-size:21px;font-weight:800;letter-spacing:-.01em;color:var(--text)}
+.day-closed .dc-s{margin:0;font-size:14px;line-height:1.55;color:var(--muted)}
+@media (max-width:620px){.day-closed{padding:18px}.day-closed .dc-t{font-size:18px}.day-closed .dc-s{font-size:13px}}
+@media (prefers-reduced-motion:reduce){.day-closed{animation:none}}
 .summary{position:sticky;top:18px}
 .sum-empty{color:var(--muted);font-size:14px}
 .sum-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;max-height:340px;overflow-y:auto}
@@ -783,7 +801,7 @@ table.slots .cell-inner.cell-blocked{max-width:120px;overflow:hidden;text-overfl
 <div class="lab">Past</div>
 <div class="sub">Unavailable</div>
 </div>
-</div>  </div> </div> </div> <div class="card"> <h3>Select your slots</h3> <div class="info-bar">Tap a cell to select. You can pick slots across <strong>multiple dates</strong> — switch dates and your selections are kept.</div> <div id="groupPills" class="group-pills" style="display:none"></div> <div class="table-scroll">
+</div>  </div> </div> </div> <div class="card"> <h3>Select your slots</h3> <div class="info-bar" id="gridHint">Tap a cell to select. You can pick slots across <strong>multiple dates</strong> — switch dates and your selections are kept.</div> <div id="groupPills" class="group-pills" style="display:none"></div> <div class="grid-wrap" id="gridWrap"> <div class="table-scroll">
 <table class="slots">
 <thead>
 <tr id="gridGroups" style="display:none">
@@ -794,7 +812,7 @@ table.slots .cell-inner.cell-blocked{max-width:120px;overflow:hidden;text-overfl
 <tbody id="gridBody">
 </tbody>
 </table>
-</div> </div> <div class="card summary"> <h3>Reservation Summary</h3> <div id="sumEmpty" class="sum-empty">No slots selected yet. Pick a date, then tap open slots.</div> <div id="sumList" class="sum-list">
+</div> <div class="day-closed" id="dayClosed" hidden><div class="dc-in"><p class="dc-t" id="dcTitle"></p><p class="dc-s" id="dcSub"></p></div></div> </div> </div> <div class="card summary"> <h3>Reservation Summary</h3> <div id="sumEmpty" class="sum-empty">No slots selected yet. Pick a date, then tap open slots.</div> <div id="sumList" class="sum-list">
 </div> <div class="sum-total">
 <span class="lab">Estimated total</span>
 <span class="tot-wrap">
@@ -1138,7 +1156,26 @@ pendingSet=new Set;const now=Date.now();e.forEach(e=>{const t=e.data();if("cance
 ;if(!hu||hu<now)return;if(t.bookingId&&(t.bookingId===reservedBookingId||t.bookingId===releasingBookingId))return
 ;(t.slots||[]).forEach(e=>pendingSet.add(t.court+"|"+e));return}
 ;const o="confirmed"===t.status?bookedSet:pendingSet;(t.slots||[]).forEach(e=>o.add(t.court+"|"+e))}),availReady=!0,renderGrid()
-},e=>console.error(e)))}function renderGrid(){const e=$("gridBody");e.innerHTML=""
+},e=>console.error(e)))}/* Set by renderGrid before it builds a single cell, read inside the loop. */
+let CLOSED_DAY=null
+/* Null unless every court is blocked for every slot of the selected date. The
+   label and note come from the first blocked slot that carries them, which is
+   how the venue gets to write its own message. */
+function closedDayInfo(){if(!COURTS.length)return null
+;const slots=buildSlots();if(!slots.length)return null
+;let lb="",nt=""
+;for(const c of COURTS)for(const s of slots){
+if(!isBlocked(c,selectedDate,s.key))return null
+;if(!lb){lb=blockLabelFor(c,selectedDate,s.key);nt=blockNoteFor(c,selectedDate,s.key)}}
+/* An unlabelled full-day block is the venue keeping the day to itself. Say it
+   is not available and nothing more — "Fully booked" would be a guess. */
+;return{label:lb||"Not available",note:nt||"This day is not open for booking."}}
+function paintClosedDay(info){const wrap=$("gridWrap"),box=$("dayClosed");if(!wrap||!box)return
+;wrap.classList.toggle("closed",!!info);box.hidden=!info
+;const hint=$("gridHint");if(hint)hint.style.display=info?"none":""
+;if(info){$("dcTitle").textContent=info.label;$("dcSub").textContent=info.note}}
+function renderGrid(){const e=$("gridBody");e.innerHTML=""
+;CLOSED_DAY=closedDayInfo()
 /* A slot the customer picked can be taken by someone else, blocked by the venue, or
    simply roll into the past while they are still choosing. Every removal goes through
    drop() so the summary, the calendar dots and the total cannot drift out of step
@@ -1157,7 +1194,8 @@ s?(drop(n),i.className+=" cell-past",i.textContent="Past"):"unavailable"===Strin
    a player something useful, so it is shown, in its own colour so it does not
    read as somebody else's booking. Unlabelled blocks look like "Booked" as
    before. */
-isBlocked(e,selectedDate,a.key)?(drop(n),(()=>{const lb=blockLabelFor(e,selectedDate,a.key),nt=blockNoteFor(e,selectedDate,a.key)
+isBlocked(e,selectedDate,a.key)?(drop(n),(()=>{if(CLOSED_DAY){i.className+=" cell-closed";return}
+const lb=blockLabelFor(e,selectedDate,a.key),nt=blockNoteFor(e,selectedDate,a.key)
 ;i.className+=lb?" cell-blocked":" cell-booked";i.textContent=lb||"Booked"
 ;if(lb)i.title=nt?lb+" \u2014 "+nt:lb
 ;if(lb&&nt){i.classList.add("has-note");i.style.cursor="pointer"
@@ -1171,7 +1209,7 @@ afterCartChange()}):cart.has(n)?(i.className+=" cell-selected",i.textContent="Se
    up selecting a slot that is already taken. */
 afterCartChange()}):(i.className+=" cell-loading",i.textContent="…"),t.appendChild(i),r.appendChild(t)}),e.appendChild(r)})
 ;dropped&&(updateSummary(),renderCalendar(),toast(1===dropped?"A slot you picked was just taken — removed from your selection":dropped+" slots you picked were just taken — removed from your selection"))
-;sizeSlotsCard()}/* Set the middle grid track to the width the visible courts actually need.
+;paintClosedDay(CLOSED_DAY),sizeSlotsCard()}/* Set the middle grid track to the width the visible courts actually need.
    Called at the end of renderGrid, so it follows the court-type filter. */
 function sizeSlotsCard(){try{
 const layout=document.querySelector(".grid-layout");if(!layout)return

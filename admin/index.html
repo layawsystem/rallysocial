@@ -511,25 +511,25 @@ table.slots td.cell,table.sched td.cell{border-bottom:1px solid rgba(255,255,255
    a venue with no court types. */
 /* Segmented control — identical to the booking page's, so the desk and the
    website look like one product. */
-.walk-pills{display:flex;align-items:stretch;margin:0 0 12px;padding:5px;gap:0;
+.walk-pills,.sched-pills{display:flex;align-items:stretch;margin:0 0 12px;padding:5px;gap:0;
 background:var(--elev);border:1px solid var(--open-bd);border-radius:999px;
 box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
-.walk-pills button{flex:1 1 auto;min-width:0;position:relative;display:flex;align-items:center;justify-content:center;gap:8px;
+.walk-pills button,.sched-pills button{flex:1 1 auto;min-width:0;position:relative;display:flex;align-items:center;justify-content:center;gap:8px;
 border:0;background:transparent;color:var(--text-2);font:inherit;font-weight:700;font-size:13px;
 padding:9px 12px;border-radius:999px;cursor:pointer;white-space:nowrap;
 transition:background .18s ease,color .18s ease}
-.walk-pills button svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;
+.walk-pills button svg,.sched-pills button svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;
 stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.walk-pills button span{overflow:hidden;text-overflow:ellipsis}
-.walk-pills button+button::before{content:"";position:absolute;left:0;top:22%;height:56%;width:1px;
+.walk-pills button span,.sched-pills button span{overflow:hidden;text-overflow:ellipsis}
+.walk-pills button+button::before,.sched-pills button+button::before{content:"";position:absolute;left:0;top:22%;height:56%;width:1px;
 background:var(--line);transition:opacity .18s ease}
-.walk-pills button.on::before,.walk-pills button.on+button::before{opacity:0}
-.walk-pills button:not(.on):hover{color:var(--text)}
-.walk-pills button.on{background:var(--sel-bg);color:var(--sel-tx);box-shadow:0 2px 10px rgba(0,0,0,.35)}
+.walk-pills button.on::before,.walk-pills button.on+button::before,.sched-pills button.on::before,.sched-pills button.on+button::before{opacity:0}
+.walk-pills button:not(.on):hover,.sched-pills button:not(.on):hover{color:var(--text)}
+.walk-pills button.on,.sched-pills button.on{background:var(--sel-bg);color:var(--sel-tx);box-shadow:0 2px 10px rgba(0,0,0,.35)}
 @media (max-width:760px){
-.walk-pills{padding:4px}
-.walk-pills button{flex-direction:column;gap:5px;padding:8px 4px;font-size:11.5px}
-.walk-pills button svg{width:19px;height:19px}
+.walk-pills,.sched-pills{padding:4px}
+.walk-pills button,.sched-pills button{flex-direction:column;gap:5px;padding:8px 4px;font-size:11.5px}
+.walk-pills button svg,.sched-pills button svg{width:19px;height:19px}
 }
 @supports (height:100dvh){.modal{max-height:calc(100dvh - 32px)}}
 /* Only the overlay and the modal trap scrolling. Applying this to every
@@ -645,7 +645,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <div class="n" id="stRevenue">₱0</div>
 <div class="l">Day total</div>
 </div> </div> <div class="card"> <div class="view-head"> <h3 id="dayTitle">Bookings</h3> <div class="toggle"> <button id="tabList" class="on">List</button> <button id="tabGrid">Grid</button> </div> </div> <div id="listView">
-</div> <div id="gridView" style="display:none"> <div class="table-scroll">
+</div> <div id="gridView" style="display:none"> <div id="schedPills" class="sched-pills" style="display:none"></div> <div class="table-scroll">
 <table class="sched">
 <thead>
 <tr id="schedHead">
@@ -1171,8 +1171,26 @@ const grp=DAY.filter(b=>(b.bookingId||b.id)===card.dataset.key);if(grp.length)op
 }function buildSlots(){
 const t=Number(SETTINGS.openHour??8),e=Number(SETTINGS.closeHour??22),n=Number(SETTINGS.slotMinutes??60),a=[]
 ;for(let o=60*t;o+n<=60*e;o+=n)a.push({key:pad2(Math.floor(o/60))+":"+pad2(o%60),mins:o});return a}
+
+/* LAYAW-SCHED-FILTER — "" is every court; otherwise one court type. */
+let SCHED_GROUP=""
+function schedGroupsInUse(){const seen=[],out=[]
+;COURTS.forEach(c=>{const g=(c.group||"").trim();if(g&&seen.indexOf(g)<0){seen.push(g);out.push(g)}})
+;return out}
+function schedCourts(){return SCHED_GROUP?COURTS.filter(c=>(c.group||"")===SCHED_GROUP):COURTS}
+function renderSchedPills(){const box=$("schedPills");if(!box)return
+;const gs=schedGroupsInUse()
+/* One type is no choice at all, and a venue with untyped courts has nothing to
+   filter by — in both cases the control would only take up room. */
+;if(gs.length<2){box.style.display="none";box.innerHTML="";SCHED_GROUP="";return}
+;box.style.display="flex";box.innerHTML=""
+;const mk=(label,val)=>{const b=segButton(label,val==="")
+;if(val===SCHED_GROUP)b.className="on"
+;b.onclick=()=>{SCHED_GROUP=val;renderSchedPills();renderSchedHead();renderGrid()}
+;box.appendChild(b)}
+;mk("All","");gs.forEach(g=>mk(g,g))}
 function renderSchedHead(){const t=$("schedHead");t.innerHTML="";const e=document.createElement("th")
-;e.textContent="Time",t.appendChild(e),COURTS.forEach(e=>{const n=document.createElement("th");n.textContent=e.name,
+;e.textContent="Time",t.appendChild(e),schedCourts().forEach(e=>{const n=document.createElement("th");n.textContent=e.name,
 t.appendChild(n)})}function bkHoldMs(e){return e&&e.holdUntil&&e.holdUntil.toMillis?e.holdUntil.toMillis():0}
 function isLiveBooking(e){if(!e||"cancelled"===e.status)return!1;
 if("reserved"===e.status){const hu=bkHoldMs(e);return!(!hu||hu<Date.now())}return!0}
@@ -1183,13 +1201,14 @@ var BLOCK_NOTES={}
 ;function isCourtBlocked(court,date,slotKey){return!!court&&Array.isArray(court.blocks)&&court.blocks.some(b=>b&&b.date===date&&Array.isArray(b.slots)&&b.slots.includes(slotKey))}
 function bkRank(e){return"confirmed"===e.status?3:"pending"===e.status?2:"reserved"===e.status?1:0}
 function renderGrid(){if(!SETTINGS||!COURTS.length)return void($("schedBody").innerHTML="")
+;renderSchedPills()
 ;const t=buildSlots(),e=Number(SETTINGS.slotMinutes??60),n={};DAY.forEach(t=>{
 isLiveBooking(t)&&(t.slots||[]).forEach(e=>{const k=t.court+"|"+e;if(!n[k]||bkRank(t)>bkRank(n[k]))n[k]=t})});const a={},o={};COURTS.forEach(e=>{a[e.name]={},
 o[e.name]=new Set;let s=0;for(;s<t.length;){const i=n[e.name+"|"+t[s].key];if(!i){s++;continue}let c=s+1
 ;for(;c<t.length;){const a=n[e.name+"|"+t[c].key];if(!a||a.id!==i.id)break;c++}a[e.name][s]={booking:i,len:c-s}
 ;for(let t=s+1;t<c;t++)o[e.name].add(t);s=c}});const s=$("schedBody");s.innerHTML="",t.forEach((t,n)=>{
 const i=document.createElement("tr"),c=document.createElement("td");c.className="time-cell",
-c.textContent=hourLabel(t.mins)+"-"+hourLabel(t.mins+e),i.appendChild(c);const SLOTKEY=t.key,SLOTMINS=t.mins;COURTS.forEach(t=>{if(o[t.name].has(n))return
+c.textContent=hourLabel(t.mins)+"-"+hourLabel(t.mins+e),i.appendChild(c);const SLOTKEY=t.key,SLOTMINS=t.mins;schedCourts().forEach(t=>{if(o[t.name].has(n))return
 ;const e=a[t.name][n];if(e){const t=e.booking,n=t.status||"pending",a=document.createElement("td")
 ;a.className="cell book-cell "+n,
 a.rowSpan=e.len,a.innerHTML='<div class="nm">'+nameOf(t)+'</div><div class="stt">'+n.toUpperCase()+"</div>",
