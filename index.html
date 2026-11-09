@@ -868,6 +868,8 @@ let viewYear,viewMonth,SETTINGS=null,COURTS=[],RATES=[],PROMOS=[],appliedPromo=n
    address and look up a single participantSignatures document. A hit for the
    CURRENT version means they have already signed and see nothing. */
 ;let AGREEMENT=null,agreementRequired=!1,agreementHash="",agreementCheckedFor=""
+/* The lookup in flight, so a second caller can wait on it instead of racing. */
+;let agreementLookup=null,agreementTypeTimer=0
 /* ── Remembering the booker on this device ────────────────────────────────
    Signing up should save people from typing, not just from reading the
    agreement. It cannot come from Firestore: participants is manager-only on
@@ -908,19 +910,27 @@ const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str))
 ;async function refreshAgreementGate(){const card=$("agreementCard");if(!card)return
 ;if(!AGREEMENT||!AGREEMENT.bodyHtml){card.style.display="none";agreementRequired=!1;return}
 ;const email=($("emailInput").value||"").trim().toLowerCase()
-;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){card.style.display="none";agreementRequired=!1;agreementCheckedFor="";setKnown(!1);return}
+;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){card.style.display="none";agreementRequired=!1;agreementCheckedFor="";agreementLookup=null;setKnown(!1);return}
+/* A settled answer for this exact address. Nothing to ask again. */
 ;if(email===agreementCheckedFor)return
-;agreementCheckedFor=email
-;const h=await sha256Hex(email);
-/* No Web Crypto (very old browser): ask everyone rather than silently skip. */
-agreementHash=h
-;let signed=!1
-;if(h)try{const d=await db.collection("participantSignatures").doc(h).get()
-;signed=d.exists&&d.data().agreementVersion===AGREEMENT.version}catch(e){signed=!1}
-;if(email!==agreementCheckedFor)return
-/* a newer keystroke already superseded this lookup */
+/* A lookup for this address is already running — join it, do not return. The
+   submit handler awaits this function as its last line of defence, and handing
+   it a stale agreementRequired is how a first-timer gets through unsigned. */
+;if(agreementLookup&&agreementLookup.email===email)return agreementLookup.promise
+;const run=(async()=>{const h=await sha256Hex(email)
+;let signed=!1,answered=!0
+/* No Web Crypto (very old browser): h is "", nobody is matched, and everyone
+   is asked — which is a real answer, not a failure. */
+;if(h){try{const d=await db.collection("participantSignatures").doc(h).get()
+;signed=d.exists&&d.data().agreementVersion===AGREEMENT.version}catch(e){signed=!1;answered=!1}}
+/* They typed on while we waited; that keystroke's own lookup owns the UI. */
+;if(($("emailInput").value||"").trim().toLowerCase()!==email)return
+;agreementHash=h
 ;agreementRequired=!signed
-/* Email is the first field now, so this answer arrives before they have typed
+/* Only remember an answer we actually got. Caching a failed read left a player
+   who HAD signed being asked again on every attempt, with nothing to retry. */
+;agreementCheckedFor=answered?email:""
+/* Email is the first field, so this answer arrives before they have typed
    anything else. Saying so out loud is what makes signing up feel worth it —
    and it discloses nothing new, since showing or hiding the agreement card
    already told them the same thing. */
@@ -928,13 +938,19 @@ agreementHash=h
 ;if(agreementRequired){$("agreementBody").innerHTML=AGREEMENT.bodyHtml
 ;$("agrEffective").textContent=(AGREEMENT.effectiveDate?"Effective "+AGREEMENT.effectiveDate+" · ":"")+"Version "+(AGREEMENT.version||"1.0")
 ;$("agreementBody").scrollTop=0}
-;card.style.display=agreementRequired?"block":"none"}
+;card.style.display=agreementRequired?"block":"none"})()
+;agreementLookup={email:email,promise:run}
+;try{await run}finally{if(agreementLookup&&agreementLookup.email===email)agreementLookup=null}}
+/* Start looking while they are still typing, so the card is already there when
+   they reach the next field instead of appearing after they leave it. */
+function agreementGateSoon(){clearTimeout(agreementTypeTimer)
+;agreementTypeTimer=setTimeout(refreshAgreementGate,600)}
 /* Tap, not hover: hover does not exist on a phone, and that is where almost
    every booking is made. */
 ;function openSlotInfo(title,body){$("slotInfoTitle").textContent=title
 ;$("slotInfoBody").textContent=body;$("slotInfoOverlay").classList.add("show")}
 ;function setKnown(on){const n=$("bookerKnown");if(n)n.style.display=on?"block":"none"}
-;function resetAgreementFields(){agreementRequired=!1;agreementHash="";agreementCheckedFor="";setKnown(!1)
+;function resetAgreementFields(){agreementRequired=!1;agreementHash="";agreementCheckedFor="";agreementLookup=null;clearTimeout(agreementTypeTimer);setKnown(!1)
 ;const c=$("agreementCard");if(c)c.style.display="none"
 ;["dobInput","addrInput","ecNameInput","ecRelInput","ecNumInput"].forEach(id=>{const el=$(id);if(el)el.value=""})
 ;const a=$("agrAccept");if(a)a.checked=!1}
@@ -1398,7 +1414,7 @@ window.innerWidth<=1e3&&($("mobileBar").style.display="flex"),$("nameInput").val
 $("emailInput").value="",appliedPromo=null,$("voucherInput")&&($("voucherInput").value=""),setVoucherMsg("",!0),
 $("receiptPreview").style.display="none";resetAgreementFields();const e=$("uploadBox").querySelector(".big")
 ;e&&(e.textContent="☁️ Tap to upload image"),renderGrid(),updateSummary(),renderCalendar(),window.scrollTo({top:0,
-behavior:"smooth"})},$("emailInput").addEventListener("change",refreshAgreementGate),$("emailInput").addEventListener("blur",refreshAgreementGate),
+behavior:"smooth"})},$("emailInput").addEventListener("change",refreshAgreementGate),$("emailInput").addEventListener("blur",refreshAgreementGate),$("emailInput").addEventListener("input",agreementGateSoon),
 /* A phone gets handed around at a venue. One tap has to be enough for the
    next person to get an empty form, and to stop this device offering the
    previous booker's details again. */
