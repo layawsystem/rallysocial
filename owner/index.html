@@ -1471,8 +1471,13 @@ auth&&auth.onAuthStateChanged(async e=>{if($("boot").style.display="none",e){let
 t=(await db.collection("admins").doc(e.uid).get()).exists}catch(e){t=!1}if(t)return $("dashView").style.display="none",
 $("pwGate").style.display="none",
 $("loginView").style.display="grid",void($("loginErr").textContent="This is a staff account. Please sign in with the owner account.")
+/* LAYAW-PW-GATE-PER-UID — asked once per owner, on their own account. The old
+   boolean still counts as "everybody here is done", so a project that has only
+   ever had one owner is unaffected. */
 ;let n=!1;if(!("maintenance@layawsystem.com"===(e.email||"").toLowerCase()))try{
-const e=await db.collection("settings").doc("config").get();n=!(e.exists&&!0===e.data().ownerPasswordSet)}catch(e){n=!1}
+const c=await db.collection("settings").doc("config").get(),v=c.exists?c.data():{}
+;const done=Array.isArray(v.ownerPasswordSetUids)?v.ownerPasswordSetUids:[]
+;n=!(!0===v.ownerPasswordSet||done.indexOf(e.uid)>=0)}catch(e){n=!1}
 if(n)return $("loginView").style.display="none",$("dashView").style.display="none",$("newPw").value="",
 $("newPw2").value="",$("pwErr").textContent="",void($("pwGate").style.display="grid")
 ;$("loginView").style.display="none",$("pwGate").style.display="none",$("dashView").style.display="block",
@@ -1491,7 +1496,7 @@ $("signoutBtn").onclick=()=>auth.signOut(),$("pwSaveBtn").onclick=async()=>{cons
 ;if(e!==t)return void($("pwErr").textContent="Passwords do not match.");const n=auth.currentUser
 ;if(!n)return void($("pwErr").textContent="Session expired. Please sign in again.");const a=$("pwSaveBtn")
 ;a.disabled=!0,a.textContent="Saving…";try{await n.updatePassword(e),await db.collection("settings").doc("config").set({
-ownerPasswordSet:!0},{merge:!0}),$("pwGate").style.display="none",$("dashView").style.display="block",startDashboard()
+ownerPasswordSetUids:firebase.firestore.FieldValue.arrayUnion(n.uid)},{merge:!0}),$("pwGate").style.display="none",$("dashView").style.display="block",startDashboard()
 }catch(e){const t={"auth/weak-password":"Password is too weak. Please use at least 8 characters.",
 "auth/requires-recent-login":"For security, please sign out and sign in again, then set your password."}
 ;$("pwErr").textContent=t[e.code]||"Could not update password: "+(e.message||e.code||"")}finally{a.disabled=!1,
@@ -2284,14 +2289,20 @@ $("promoOverlay").classList.add("show")}function payIcon(e){
 return'<div class="kpi-ico '+e+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg></div>'
 }function payKpi(e,t,n,a){
 return'<div class="kpi">'+payIcon(n)+'<div class="kpi-body"><div class="kl">'+e+'</div><div class="kn">'+t+"</div>"+(a?'<div class="kd">'+a+"</div>":"")+"</div></div>"
-}async function renderPayments(){$("payByMethod").innerHTML='<div class="empty">Loading…</div>',await ensureAnalytics(),
+}
+/* LAYAW-PAY-SLOTS — bookings store the key, the breakdown shows the name the
+   player actually saw. */
+function payLabel(k){const m={GCash:SETTINGS.gcashLabel||"GCash",Maya:SETTINGS.mayaLabel||"Maya",
+Bank:SETTINGS.bankLabel||"Bank Transfer",Bank2:SETTINGS.bank2Label||"Bank Transfer 2",Cash:"Cash"}
+;return m[k]||k}
+async function renderPayments(){$("payByMethod").innerHTML='<div class="empty">Loading…</div>',await ensureAnalytics(),
 await ensureAllContacts()
 ;const e=ALLB.filter(e=>"confirmed"===e.status),t=e.reduce((e,t)=>e+Number(t.amount||0),0),n=orderGroups(ALLB.filter(e=>"pending"===e.status)),a=ALLB.filter(e=>"pending"===e.status).reduce((e,t)=>e+Number(t.amount||0),0),o=confRev(ALLB.filter(e=>inSaleMonth(e,0))),s=confRev(ALLB.filter(e=>inSaleMonth(e,1)))
 ;$("payKpis").innerHTML=payKpi("Total revenue (90d)",peso(t),"rev")+payKpi("Received this month",peso(o),"bk")+payKpi("Pending amount",peso(a),"pend",n.length+" order"+(1===n.length?"":"s"))+payKpi("Transactions",String(e.length),"occ")
 ;const r={};(SETTINGS.paymentMethods||[]).concat(["Cash"]).forEach(e=>{e&&!(e in r)&&(r[e]=0)}),e.forEach(e=>{
 const t=e.paymentMethod||"Other";r[t]=(r[t]||0)+Number(e.amount||0)})
 ;const i=Object.entries(r).sort((e,t)=>t[1]-e[1]),c=Math.max(1,...i.map(e=>e[1]))
-;$("payByMethod").innerHTML=i.length?i.map(([e,t])=>'<div class="barline"><span class="bl-l">'+esc(e)+'</span><span class="bl-track"><span class="bl-fill" style="width:'+t/c*100+'%"></span></span><span class="bl-v">'+peso(t)+"</span></div>").join(""):'<div class="empty">No payment methods configured yet.</div>'
+;$("payByMethod").innerHTML=i.length?i.map(([e,t])=>'<div class="barline"><span class="bl-l">'+esc(payLabel(e))+'</span><span class="bl-track"><span class="bl-fill" style="width:'+t/c*100+'%"></span></span><span class="bl-v">'+peso(t)+"</span></div>").join(""):'<div class="empty">No payment methods configured yet.</div>'
 ;const d=s>0?Math.round((o-s)/s*100):o>0?100:0
 ;$("payTrend").innerHTML='<div class="big-stat">'+peso(o)+'</div><div class="big-sub">'+(d>=0?'<span style="color:var(--pos);font-weight:700">▲ '+d+"%</span>":'<span style="color:var(--cancel);font-weight:700">▼ '+Math.abs(d)+"%</span>")+" vs last month ("+peso(s)+")</div>"
 ;const l=e.slice().sort((e,t)=>e.date<t.date?1:-1).slice(0,25).map(e=>"<tr><td>"+niceDate(e.date)+"</td><td>"+esc(nameOf(e))+"</td><td>"+esc(e.court||"—")+'</td><td><span class="method">'+esc(e.paymentMethod||"—")+'</span></td><td class="amt">'+peso(e.amount)+"</td></tr>").join("")

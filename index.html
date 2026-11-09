@@ -841,7 +841,7 @@ table.slots .cell-inner.cell-blocked{max-width:120px;overflow:hidden;text-overfl
 <label class="fl">Mobile number</label>
 <input type="tel" id="contactInput" placeholder="09XX XXX XXXX" autocomplete="tel"/>
 <div class="sum-note" id="prefillNote" style="display:none;margin-top:10px">Filled in from your last booking on this device. <button type="button" class="linkish" id="clearBooker">Not you? Clear</button></div>
-</div> </div><div class="card" id="agreementCard" style="display:none"> <h3>First time booking with us</h3> <p class="sum-note agr-intro">Please read and accept the Participant Agreement. You only do this once &mdash; next time you book with this email address, we will skip straight to payment.</p> <div id="agreementBody"></div> <p class="agr-scrollnote" id="agrEffective"></p> <div class="field-gap"> <label class="fl">Date of birth</label> <input type="date" id="dobInput"/> </div> <div class="field-gap"> <label class="fl">Home address</label> <input type="text" id="addrInput" placeholder="House/unit, street, barangay, city"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; name</label> <input type="text" id="ecNameInput" placeholder="Full name"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; relationship</label> <input type="text" id="ecRelInput" placeholder="Spouse, parent, sibling, friend"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; mobile number</label> <input type="tel" id="ecNumInput" placeholder="09XX XXX XXXX"/> </div> <label class="agr-accept" for="agrAccept"> <input type="checkbox" id="agrAccept"/> <span>I have read, understood, and voluntarily agree to be bound by this Participant Agreement. I understand it includes a release of liability and an assumption of risk.</span> </label> </div> <div class="card"> <h3>Select a payment method</h3> <p class="sum-note" style="margin:-6px 0 14px">Choose one option below.</p> <div class="pay-methods" id="payMethods">
+</div> </div><div class="card" id="agreementCard" style="display:none"> <h3>First time booking with us</h3> <p class="sum-note agr-intro">Please read and accept the Participant Agreement. You only do this once &mdash; next time you book with this email address, we will skip straight to payment.</p> <div id="agreementBody"></div> <p class="agr-scrollnote" id="agrEffective"></p> <div class="field-gap"> <label class="fl">Date of birth</label> <input type="date" id="dobInput"/> </div> <div class="field-gap"> <label class="fl">Home address (optional)</label> <input type="text" id="addrInput" placeholder="House/unit, street, barangay, city"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; name</label> <input type="text" id="ecNameInput" placeholder="Full name"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; relationship</label> <input type="text" id="ecRelInput" placeholder="Spouse, parent, sibling, friend"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; mobile number</label> <input type="tel" id="ecNumInput" placeholder="09XX XXX XXXX"/> </div> <label class="agr-accept" for="agrAccept"> <input type="checkbox" id="agrAccept"/> <span>I have read, understood, and voluntarily agree to be bound by this Participant Agreement. I understand it includes a release of liability and an assumption of risk.</span> </label> </div> <div class="card"> <h3>Select a payment method</h3> <p class="sum-note" style="margin:-6px 0 14px">Choose one option below.</p> <div class="pay-methods" id="payMethods">
 </div> <div class="pay-detail" id="payDetail" style="display:none">
 </div> </div> <div class="card"> <h3>Upload receipt</h3> <p class="sum-note" style="margin:-6px 0 14px">Upload your payment proof. <strong style="color:var(--cancel)">Required.</strong>
 </p> <div class="upload" id="uploadBox"> <div class="big">☁️ Tap to upload image</div> <div class="small">JPG or PNG, max 5MB</div> <img class="preview" id="receiptPreview" style="display:none"/> </div> <input type="file" id="receiptInput" accept="image/*" style="display:none"/> </div> <button class="btn btn-navy" id="submitBtn">Submit Booking</button> <div class="hold-note">🔒 Your slot is held as <strong>Pending</strong>. We'll confirm it shortly after verifying your payment.</div> <div class="footer" id="footerLinks2">
@@ -1374,10 +1374,15 @@ async function releaseReservation(){forgetHold();const bid=reservedBookingId,loc
 ;snap.forEach(doc=>{if("reserved"===String(doc.data().status).toLowerCase()){b.delete(doc.ref);any=!0}})}
 ;lockIds.forEach(id=>{b.delete(db.collection("slotLocks").doc(id));any=!0})
 ;if(any)await b.commit()}
-catch(e){console.warn("release failed",e)}finally{releasingBookingId=null;try{renderGrid()}catch(e){}}}function paymentOptions(){const e=[{key:"GCash",label:"GCash",
-name:SETTINGS.gcashName,number:SETTINGS.gcashNumber,qr:SETTINGS.gcashQrUrl},{key:"Maya",label:"Maya",
-name:SETTINGS.mayaName,number:SETTINGS.mayaNumber,qr:SETTINGS.mayaQrUrl},{key:"Bank",label:"Bank Transfer",
-name:SETTINGS.bankName,number:SETTINGS.bankNumber,qr:SETTINGS.bankQrUrl
+catch(e){console.warn("release failed",e)}finally{releasingBookingId=null;try{renderGrid()}catch(e){}}}/* LAYAW-PAY-SLOTS — the key is what gets stored on a booking and must never
+   change; the label is what the player reads and comes from settings, so a
+   venue with two bank accounts can name them instead of offering "Bank
+   Transfer" and "Bank Transfer 2". */
+function paymentOptions(){const e=[{key:"GCash",label:SETTINGS.gcashLabel||"GCash",
+name:SETTINGS.gcashName,number:SETTINGS.gcashNumber,qr:SETTINGS.gcashQrUrl},{key:"Maya",label:SETTINGS.mayaLabel||"Maya",
+name:SETTINGS.mayaName,number:SETTINGS.mayaNumber,qr:SETTINGS.mayaQrUrl},{key:"Bank",label:SETTINGS.bankLabel||"Bank Transfer",
+name:SETTINGS.bankName,number:SETTINGS.bankNumber,qr:SETTINGS.bankQrUrl},{key:"Bank2",label:SETTINGS.bank2Label||"Bank Transfer 2",
+name:SETTINGS.bank2Name,number:SETTINGS.bank2Number,qr:SETTINGS.bank2QrUrl
 }],t=Array.isArray(SETTINGS.paymentMethods)?SETTINGS.paymentMethods.map(x=>String(x).toLowerCase()):null
 ;return e.filter(e=>t?t.includes(e.key.toLowerCase()):e.number||e.qr)}function renderPayMethods(){
 const e=paymentOptions(),t=$("payMethods");t.innerHTML="",chosenPayment=null,$("payDetail").style.display="none",
@@ -1463,7 +1468,6 @@ const e=$("nameInput").value.trim(),t=$("contactInput").value.trim(),o=$("emailI
 ;await refreshAgreementGate()
 ;if(agreementRequired){
 if(!$("dobInput").value)return void toast("Please enter your date of birth.")
-;if(!$("addrInput").value.trim())return void toast("Please enter your home address.")
 ;if(!$("ecNameInput").value.trim())return void toast("Please enter an emergency contact name.")
 ;if(!$("ecNumInput").value.trim())return void toast("Please enter an emergency contact number.")
 ;if(!$("agrAccept").checked)return void toast("Please read and accept the Participant Agreement.")
