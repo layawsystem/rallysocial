@@ -1388,8 +1388,20 @@ name:SETTINGS.bank2Name,number:SETTINGS.bank2Number,qr:SETTINGS.bank2QrUrl
 const e=paymentOptions(),t=$("payMethods");t.innerHTML="",chosenPayment=null,$("payDetail").style.display="none",
 e.length?e.forEach(e=>{const o=document.createElement("div");o.className="pay-opt",o.textContent=e.label,o.onclick=()=>{
 chosenPayment=e.key,[...t.children].forEach(e=>e.classList.remove("on")),o.classList.add("on"),showPayDetail(e)},
-t.appendChild(o)}):t.innerHTML='<p class="sum-note">No payment methods configured.</p>'}function showPayDetail(e){
+t.appendChild(o)}):t.innerHTML='<p class="sum-note">No payment methods configured.</p>'}/* LAYAW-QR-UPLOAD — a QR the venue uploaded from its own dashboard lives in
+   settings/qr_<key>. It is fetched only when a player actually picks that
+   method, and remembered for the rest of the visit, so the cost is one small
+   read per method per session instead of a payload on every page load.
+   A failed read is not cached: one blip would otherwise hide the QR for the
+   whole visit, and the venue's own URL is the fallback. */
+const QR_CACHE={}
+async function storedQr(key){if(key in QR_CACHE)return QR_CACHE[key]
+;try{const d=await db.collection("settings").doc("qr_"+key).get()
+;const v=d.exists&&d.data().image?String(d.data().image):""
+;QR_CACHE[key]=v;return v}catch(e){return ""}}
+async function showPayDetail(e){
 const t=$("payDetail");t.style.display="block";let o=""
+;e=Object.assign({},e,{qr:(await storedQr(e.key))||e.qr})
 ;if(e.qr&&(o+='<div class="scan">Scan to pay with '+e.label+'</div><img src="'+e.qr+'" alt="'+e.label+' QR" />'),
 (e.name||e.number)&&(o+='<div class="pay-acct"><div><div class="nm">'+(e.name||"")+'</div><div class="no" id="payNo">'+(e.number||"")+"</div></div>",
 e.number&&(o+='<button class="copy-btn" id="copyNo">Copy</button>'),o+="</div>"),

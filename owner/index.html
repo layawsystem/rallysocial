@@ -395,6 +395,20 @@ table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
 .switch .sl:before{content:"";position:absolute;height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.18s}
 .switch input:checked+.sl{background:var(--green)}
 .switch input:checked+.sl:before{transform:translateX(18px)}
+
+/* LAYAW-QR-UPLOAD */
+.qr-up{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.qr-prev{width:92px;height:92px;object-fit:contain;border-radius:10px;border:1px solid var(--line);
+background:#fff;padding:5px;flex:none}
+.qr-act{display:flex;align-items:center;gap:9px;flex-wrap:wrap;min-height:34px}
+.qr-btn{border:1px solid var(--line);background:var(--elev);color:var(--text);font:inherit;font-weight:700;
+font-size:12.5px;padding:8px 14px;border-radius:9px;cursor:pointer;transition:background .18s ease,border-color .18s ease}
+.qr-btn:hover{border-color:var(--sel-bg)}
+.qr-btn:disabled{opacity:.55;cursor:default}
+.qr-del{color:var(--cancel)}
+.qr-msg{font-size:12px;color:var(--muted)}
+.qr-msg.bad{color:var(--cancel)}
+.qr-msg.good{color:var(--pos)}
 .save-bar{display:flex;align-items:center;gap:14px;margin-top:18px}
 .save-bar .msg{font-size:13px;font-weight:600;color:var(--pos)}
 .settings-stack{display:flex;flex-direction:column;gap:16px}
@@ -1076,6 +1090,18 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <label>QR image URL</label>
 <input id="set_gcashQrUrl" placeholder="https://example.com/qr.png"/>
 </div>
+<div class="fld full">
+<label>QR image</label>
+<div class="qr-up" data-pm="GCash">
+<img class="qr-prev" alt="" hidden/>
+<div class="qr-act">
+<button type="button" class="qr-btn">Upload QR</button>
+<button type="button" class="qr-btn qr-del" hidden>Remove</button>
+<span class="qr-msg"></span>
+</div>
+<input type="file" accept="image/*" hidden/>
+</div>
+</div>
 </div> </div> <div class="pay-method"> <div class="pm-head">
 <label class="switch">
 <input type="checkbox" id="pm_maya"/>
@@ -1096,6 +1122,18 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <label>QR image URL</label>
 <input id="set_mayaQrUrl" placeholder="https://example.com/qr.png"/>
 </div>
+<div class="fld full">
+<label>QR image</label>
+<div class="qr-up" data-pm="Maya">
+<img class="qr-prev" alt="" hidden/>
+<div class="qr-act">
+<button type="button" class="qr-btn">Upload QR</button>
+<button type="button" class="qr-btn qr-del" hidden>Remove</button>
+<span class="qr-msg"></span>
+</div>
+<input type="file" accept="image/*" hidden/>
+</div>
+</div>
 </div> </div> <div class="pay-method"> <div class="pm-head">
 <label class="switch">
 <input type="checkbox" id="pm_bank"/>
@@ -1104,6 +1142,10 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 </label>
 <label>Bank Transfer</label>
 </div> <div class="form-grid">
+<div class="fld full">
+<label>Display name <span style="color:var(--muted);font-weight:500">&mdash; what players see, e.g. RCBC</span></label>
+<input id="set_bankLabel" placeholder="Bank Transfer"/>
+</div>
 <div class="fld">
 <label>Account name</label>
 <input id="set_bankName"/>
@@ -1115,6 +1157,54 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <div class="fld full">
 <label>QR image URL</label>
 <input id="set_bankQrUrl" placeholder="https://example.com/qr.png"/>
+</div>
+<div class="fld full">
+<label>QR image</label>
+<div class="qr-up" data-pm="Bank">
+<img class="qr-prev" alt="" hidden/>
+<div class="qr-act">
+<button type="button" class="qr-btn">Upload QR</button>
+<button type="button" class="qr-btn qr-del" hidden>Remove</button>
+<span class="qr-msg"></span>
+</div>
+<input type="file" accept="image/*" hidden/>
+</div>
+</div>
+</div> </div> <div class="pay-method"> <div class="pm-head">
+<label class="switch">
+<input type="checkbox" id="pm_bank2"/>
+<span class="sl">
+</span>
+</label>
+<label>Bank Transfer 2</label>
+</div> <div class="form-grid">
+<div class="fld full">
+<label>Display name <span style="color:var(--muted);font-weight:500">&mdash; what players see, e.g. BPI</span></label>
+<input id="set_bank2Label" placeholder="Bank Transfer 2"/>
+</div>
+<div class="fld">
+<label>Account name</label>
+<input id="set_bank2Name"/>
+</div>
+<div class="fld">
+<label>Account number</label>
+<input id="set_bank2Number"/>
+</div>
+<div class="fld full">
+<label>QR image URL</label>
+<input id="set_bank2QrUrl" placeholder="https://example.com/qr.png"/>
+</div>
+<div class="fld full">
+<label>QR image</label>
+<div class="qr-up" data-pm="Bank2">
+<img class="qr-prev" alt="" hidden/>
+<div class="qr-act">
+<button type="button" class="qr-btn">Upload QR</button>
+<button type="button" class="qr-btn qr-del" hidden>Remove</button>
+<span class="qr-msg"></span>
+</div>
+<input type="file" accept="image/*" hidden/>
+</div>
 </div>
 </div> </div> </div> <div class="card"> <div class="card-head">
 <h3>Contact &amp; Links</h3>
@@ -2113,7 +2203,10 @@ setVal("set_checkoutMinutes",e.checkoutMinutes),setVal("set_idPrefix",e.idPrefix
 setChk("pm_maya",t.includes("maya")),setChk("pm_bank",t.includes("bank")),setVal("set_gcashName",e.gcashName),
 setVal("set_gcashNumber",e.gcashNumber),setVal("set_gcashQrUrl",e.gcashQrUrl),setVal("set_mayaName",e.mayaName),
 setVal("set_mayaNumber",e.mayaNumber),setVal("set_mayaQrUrl",e.mayaQrUrl),setVal("set_bankName",e.bankName),
-setVal("set_bankNumber",e.bankNumber),setVal("set_bankQrUrl",e.bankQrUrl),setVal("set_contactNumber",e.contactNumber),setVal("set_notifyEmail",e.notifyEmail),
+setVal("set_bankNumber",e.bankNumber),setVal("set_bankQrUrl",e.bankQrUrl),
+setChk("pm_bank2",t.includes("bank2")),setVal("set_bankLabel",e.bankLabel),
+setVal("set_bank2Label",e.bank2Label),setVal("set_bank2Name",e.bank2Name),
+setVal("set_bank2Number",e.bank2Number),setVal("set_bank2QrUrl",e.bank2QrUrl),wireQrUploads(),setVal("set_contactNumber",e.contactNumber),setVal("set_notifyEmail",e.notifyEmail),
 setVal("set_addressName",e.addressName),setVal("set_address",e.address),setVal("set_mapsLink",e.mapsLink),
 setVal("set_facebookName",e.facebookName),setVal("set_facebookLink",e.facebookLink),
 setVal("set_instagramName",e.instagramName),setVal("set_instagramLink",e.instagramLink)}function sNum(e,t){const n=$(e)
@@ -2212,7 +2305,10 @@ $("saveGroupRatesBtn")&&($("saveGroupRatesBtn").onclick=()=>{const out={}
 ;const v=String(el.value||"").trim();if(v!=="")out[g]=Number(v)})
 ;saveConfig({groupRates:out},$("saveGroupRatesBtn"),$("groupRatesMsg"))}),
 $("saveSettingsBtn").onclick=()=>{const e=[];$("pm_gcash").checked&&e.push("GCash"),
-$("pm_maya").checked&&e.push("Maya"),$("pm_bank").checked&&e.push("Bank");saveConfig({paymentMethods:e,
+$("pm_maya").checked&&e.push("Maya"),$("pm_bank").checked&&e.push("Bank"),
+$("pm_bank2").checked&&e.push("Bank2");saveConfig({paymentMethods:e,
+bankLabel:sStr("set_bankLabel"),bank2Label:sStr("set_bank2Label"),
+bank2Name:sStr("set_bank2Name"),bank2Number:sStr("set_bank2Number"),bank2QrUrl:sStr("set_bank2QrUrl"),
 gcashName:sStr("set_gcashName"),gcashNumber:sStr("set_gcashNumber"),gcashQrUrl:sStr("set_gcashQrUrl"),
 mayaName:sStr("set_mayaName"),mayaNumber:sStr("set_mayaNumber"),mayaQrUrl:sStr("set_mayaQrUrl"),
 bankName:sStr("set_bankName"),bankNumber:sStr("set_bankNumber"),bankQrUrl:sStr("set_bankQrUrl"),
@@ -2290,6 +2386,45 @@ return'<div class="kpi-ico '+e+'"><svg viewBox="0 0 24 24" fill="none" stroke="c
 }function payKpi(e,t,n,a){
 return'<div class="kpi">'+payIcon(n)+'<div class="kpi-body"><div class="kl">'+e+'</div><div class="kn">'+t+"</div>"+(a?'<div class="kd">'+a+"</div>":"")+"</div></div>"
 }
+/* LAYAW-QR-UPLOAD — each QR is its own settings doc so settings/config, which
+   every page load reads, stays small. */
+function qrDoc(key){return db.collection("settings").doc("qr_"+key)}
+/* A QR is a flat graphic: PNG keeps every edge a scanner needs, and is usually
+   smaller than JPEG for this kind of image anyway. JPEG is the fallback for a
+   photo of a printed code, and then at a quality that does not chew the
+   corners. Firestore caps a document at 1MB; 700KB of base64 leaves room. */
+function qrCompress(file){return new Promise((res,rej)=>{
+const fr=new FileReader;fr.onerror=()=>rej(new Error("read"))
+;fr.onload=()=>{const im=new Image
+;im.onerror=()=>rej(new Error("decode"))
+;im.onload=()=>{const MAX=800;let w=im.width,h=im.height
+;if(w>MAX||h>MAX){const k=MAX/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k)}
+;const c=document.createElement("canvas");c.width=w;c.height=h
+;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h)
+;let out=c.toDataURL("image/png")
+;if(out.length>220e3){const j=c.toDataURL("image/jpeg",.92);if(j.length<out.length)out=j}
+;if(out.length>700e3)return rej(new Error("too big"))
+;res(out)};im.src=fr.result};fr.readAsDataURL(file)})}
+function wireQrUploads(){document.querySelectorAll(".qr-up").forEach(box=>{
+if(box.dataset.wired)return;box.dataset.wired="1"
+;const key=box.dataset.pm,img=box.querySelector(".qr-prev"),file=box.querySelector("input[type=file]")
+,btn=box.querySelector(".qr-btn"),del=box.querySelector(".qr-del"),msg=box.querySelector(".qr-msg")
+;const say=(t,cls)=>{msg.textContent=t;msg.className="qr-msg"+(cls?" "+cls:"")}
+;const show=src=>{if(src){img.src=src;img.hidden=!1;del.hidden=!1}else{img.removeAttribute("src");img.hidden=!0;del.hidden=!0}}
+;qrDoc(key).get().then(d=>{show(d.exists&&d.data().image?d.data().image:"")}).catch(()=>{})
+;btn.onclick=()=>file.click()
+;file.onchange=async ev=>{const f=ev.target.files[0];ev.target.value=""
+;if(!f)return
+;if(f.size>8388608)return say("Image too large (max 8MB).","bad")
+;btn.disabled=!0;say("Uploading…")
+;try{const data=await qrCompress(f)
+;await qrDoc(key).set({image:data,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:!0})
+;show(data);say("Saved. Players see it on their next visit.","good")}
+catch(e){say("too big"===e.message?"That image is too detailed to store. Please upload a screenshot of the QR rather than a photo.":"Could not save that image.","bad")}
+finally{btn.disabled=!1}}
+;del.onclick=async()=>{del.disabled=!0;say("Removing…")
+;try{await qrDoc(key).delete();show("");say("Removed.","good")}
+catch(e){say("Could not remove it.","bad")}finally{del.disabled=!1}}})}
 /* LAYAW-PAY-SLOTS — bookings store the key, the breakdown shows the name the
    player actually saw. */
 function payLabel(k){const m={GCash:SETTINGS.gcashLabel||"GCash",Maya:SETTINGS.mayaLabel||"Maya",
