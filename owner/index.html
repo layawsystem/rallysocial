@@ -1330,7 +1330,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <label class="cav-mini" style="margin-top:8px">Time slots to block</label>
 <div class="cav-slot-actions" style="display:none"><button id="cavSelectAll" class="cav-linkbtn" type="button">Select all (whole day)</button><button id="cavClearAll" class="cav-linkbtn" type="button">Clear all</button></div>
 <div id="cavSlots" class="cav-slots"><div class="cav-empty">Pick a date first.</div></div>
-<label class="cav-mini" style="margin-top:8px">Show on booking page (optional)</label><select id="cavLabel" class="fld-input"><option value="">Nothing &mdash; looks like a normal booking</option><option>Open Play</option><option>Tournament</option><option>Private Event</option><option>Maintenance</option><option value="__other">Other&hellip;</option></select><input type="text" id="cavLabelOther" class="fld-input" maxlength="22" placeholder="Type what players should see" style="display:none;margin-top:6px"/><div class="cav-hint">Players see this instead of &ldquo;Booked&rdquo;.</div><label class="cav-mini" style="margin-top:8px">Pop-up text (optional)</label><input type="text" id="cavPopup" class="fld-input" maxlength="80" placeholder="e.g. Pay P250 at the gate"/><div class="cav-hint">Shown when a player taps the slot. Needs a label above it.</div><label class="cav-mini" style="margin-top:8px">Note &mdash; who is this for? (optional)</label><input type="text" id="cavNote" class="fld-input" placeholder="e.g. Coach Rey clinic, Ana Duque"/><div class="cav-hint">Only you and your staff can see this. Players never do.</div><button id="cavAddBlock" class="btn" style="width:100%;margin-top:10px;padding:11px" disabled>Block selected slots</button>
+<label class="cav-mini" style="margin-top:8px">Show on booking page (optional)</label><select id="cavLabel" class="fld-input"><option value="">Nothing &mdash; looks like a normal booking</option><option>Open Play</option><option>Tournament</option><option>Private Event</option><option>Maintenance</option><option value="__other">Other&hellip;</option></select><input type="text" id="cavLabelOther" class="fld-input" maxlength="22" placeholder="Type what players should see" style="display:none;margin-top:6px"/><div class="cav-hint">Players see this instead of &ldquo;Booked&rdquo;.</div><label class="cav-mini" style="margin-top:8px">Pop-up text (optional)</label><input type="text" id="cavPopup" class="fld-input" maxlength="80" placeholder="e.g. Pay P250 at the gate"/><div class="cav-hint">Shown when a player taps the slot. Needs a label above it.</div><label class="cav-mini" style="margin-top:8px">Note &mdash; who is this for? (optional)</label><input type="text" id="cavNote" class="fld-input" placeholder="e.g. Coach Rey clinic, Ana Duque"/><div class="cav-hint">Only you and your staff can see this. Players never do.</div><button id="cavAddBlock" class="btn" style="width:100%;margin-top:10px;padding:11px" disabled>Block selected slots</button><div class="cav-hint" id="cavWhy" style="margin-top:6px"></div>
 </div>
 <div class="cav-section">
 <div class="cav-label">Bulk: block a date range</div>
@@ -1385,7 +1385,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <button id="mcBlock" class="btn" style="flex:1;padding:11px" disabled>Block</button>
 <button id="mcUnblock" class="btn-ghost" style="flex:1;padding:11px" disabled>Unblock</button>
 </div>
-<div class="cav-hint">Applies to every selected court, on every day from start to end date.</div>
+<div class="cav-hint" id="mcWhy">Applies to every selected court, on every day from start to end date.</div>
 </div>
 <button class="btn-ghost" id="multiCourtClose" style="width:100%;margin-top:6px;padding:13px">Done</button>
 </div>
@@ -1806,7 +1806,18 @@ const isBlocked=blocked.has(sl.key);el.className="cav-slot"+(isBlocked?" taken":
 el.textContent=hourLabel(sl.mins);el.dataset.k=sl.key;
 if(!isBlocked)el.onclick=()=>{el.classList.toggle("on");syncAddBtn()};
 wrap.appendChild(el)});syncAddBtn()}
-function syncAddBtn(){const any=$("cavSlots").querySelectorAll(".cav-slot.on").length>0;$("cavAddBlock").disabled=!($("cavDate").value&&any)}
+function syncAddBtn(){const any=$("cavSlots").querySelectorAll(".cav-slot.on").length>0
+;const d=$("cavDate").value;$("cavAddBlock").disabled=!(d&&any)
+/* LAYAW-BLOCK-WHY — a slot already blocked is drawn struck through and cannot
+   be picked, so on a day that is fully blocked there is nothing to select and
+   the button can never light up. Say so, rather than leaving it dead. */
+;const why=$("cavWhy");if(!why)return
+;const taken=$("cavSlots").querySelectorAll(".cav-slot.taken").length
+,total=$("cavSlots").querySelectorAll(".cav-slot").length
+;why.textContent=!d?"Pick a date first."
+ :any?""
+ :total&&taken===total?"Every slot on this date is already blocked. Remove that date in the list below first."
+ :"Pick at least one time slot."}
 function cavSelectAllSlots(on){$("cavSlots").querySelectorAll(".cav-slot:not(.taken)").forEach(el=>{el.classList.toggle("on",on)});syncAddBtn()}
 function renderBulkSlots(){const wrap=$("cavBulkSlots");wrap.innerHTML="";buildSlots().forEach(sl=>{const el=document.createElement("div");
 el.className="cav-slot";el.textContent=hourLabel(sl.mins);el.dataset.k=sl.key;
@@ -1908,7 +1919,15 @@ const nSlots=$("mcSlots").querySelectorAll(".cav-slot.on").length;
 const hasDates=$("mcStart").value&&$("mcEnd").value;
 $("mcCount").textContent=nCourts?nCourts+" court"+(1===nCourts?"":"s")+" selected.":"No courts selected.";
 $("mcMarkNA").disabled=!nCourts;$("mcMarkAvail").disabled=!nCourts;
-const ok=nCourts&&nSlots&&hasDates;$("mcBlock").disabled=!ok;$("mcUnblock").disabled=!ok}
+const ok=nCourts&&nSlots&&hasDates;$("mcBlock").disabled=!ok;$("mcUnblock").disabled=!ok
+/* LAYAW-BLOCK-WHY — the Courts list is at the top of this modal and the button
+   is at the bottom, so by the time you press it the checkboxes are off screen.
+   Name the missing piece here, where the question is being asked. */
+;const why=$("mcWhy");if(why)why.textContent=
+ !nCourts?"Select at least one court at the top of this window."
+ :!hasDates?"Set a start and end date. For a single day, use the same date in both."
+ :!nSlots?"Pick at least one time slot above."
+ :"Applies to every selected court, on every day from start to end date."}
 function mcDates(){const s=$("mcStart").value,e=$("mcEnd").value;if(!s||!e)return[];
 const out=[],d=new Date(s+"T00:00:00"),end=new Date(e+"T00:00:00");if(end<d)return[];
 let guard=0;while(d<=end&&guard<400){out.push(d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()));d.setDate(d.getDate()+1);guard++}return out}
