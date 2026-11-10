@@ -1341,7 +1341,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <div class="cav-slot-actions" style="margin-top:10px"><button id="cavBulkSelectAll" class="cav-linkbtn" type="button">Select all (whole day)</button><button id="cavBulkClearAll" class="cav-linkbtn" type="button">Clear all</button></div>
 <div id="cavBulkSlots" class="cav-slots"></div>
 <div style="display:flex;gap:10px;margin-top:10px">
-</div><label class="cav-mini" style="margin-top:0">Show on booking page (optional)</label><select id="cavBulkLabel" class="fld-input"><option value="">Nothing &mdash; looks like a normal booking</option><option>Open Play</option><option>Tournament</option><option>Private Event</option><option>Maintenance</option><option value="__other">Other&hellip;</option></select><input type="text" id="cavBulkLabelOther" class="fld-input" maxlength="22" placeholder="Type what players should see" style="display:none;margin-top:6px"/><div class="cav-hint">Players see this instead of &ldquo;Booked&rdquo;.</div><label class="cav-mini" style="margin-top:8px">Pop-up text (optional)</label><input type="text" id="cavBulkPopup" class="fld-input" maxlength="80" placeholder="e.g. Pay P250 at the gate"/><div class="cav-hint">Shown when a player taps the slot. Needs a label above it.</div><label class="cav-mini">Note &mdash; who is this for? (optional)</label><input type="text" id="cavBulkNote" class="fld-input" placeholder="e.g. League night"/><div style="display:flex;gap:10px;margin-top:10px"><button id="cavBulkBlock" class="btn" style="flex:1;padding:11px" disabled>Block range</button>
+</div><label class="cav-mini" style="margin-top:0">Show on booking page (optional)</label><select id="cavBulkLabel" class="fld-input"><option value="">Nothing &mdash; looks like a normal booking</option><option>Open Play</option><option>Tournament</option><option>Private Event</option><option>Maintenance</option><option value="__other">Other&hellip;</option></select><input type="text" id="cavBulkLabelOther" class="fld-input" maxlength="22" placeholder="Type what players should see" style="display:none;margin-top:6px"/><div class="cav-hint">Players see this instead of &ldquo;Booked&rdquo;.</div><label class="cav-mini" style="margin-top:8px">Pop-up text (optional)</label><input type="text" id="cavBulkPopup" class="fld-input" maxlength="80" placeholder="e.g. Pay P250 at the gate"/><div class="cav-hint">Shown when a player taps the slot. Needs a label above it.</div><label class="cav-mini">Note &mdash; who is this for? (optional)</label><input type="text" id="cavBulkNote" class="fld-input" placeholder="e.g. League night"/><div style="display:flex;gap:10px;margin-top:10px"><div class="cav-hint" id="cavBulkWhy" style="margin-top:6px"></div><button id="cavBulkBlock" class="btn" style="flex:1;padding:11px" disabled>Block range</button>
 <button id="cavBulkUnblock" class="btn-ghost" style="flex:1;padding:11px" disabled>Unblock range</button>
 </div>
 <div class="cav-hint">Applies to every day from start to end date (inclusive).</div>
@@ -1788,7 +1788,7 @@ catch(e){console.warn("block notes load failed",e)}}
 
 ;function openCourtModal(court){CAV_COURT=court;
 $("courtModalTitle").textContent=court.name+(court.type?" ("+court.type+")":"");
-renderCavStatus();$("cavDate").value="";$("cavNote").value="";$("cavBulkNote").value="";wireLabelPicker("cavLabel","cavLabelOther");wireLabelPicker("cavBulkLabel","cavBulkLabelOther");resetLabelPicker("cavLabel","cavLabelOther","cavPopup");resetLabelPicker("cavBulkLabel","cavBulkLabelOther","cavBulkPopup");renderCavSlots();renderCavBlocks();loadBlockNotesForCourt(court.id).then(renderCavBlocks);
+renderCavStatus();CAV_SLOTS_FOR="";$("cavDate").value="";$("cavNote").value="";$("cavBulkNote").value="";wireLabelPicker("cavLabel","cavLabelOther");wireLabelPicker("cavBulkLabel","cavBulkLabelOther");resetLabelPicker("cavLabel","cavLabelOther","cavPopup");resetLabelPicker("cavBulkLabel","cavBulkLabelOther","cavBulkPopup");renderCavSlots();renderCavBlocks();loadBlockNotesForCourt(court.id).then(renderCavBlocks);
 $("cavBulkStart").value="";$("cavBulkEnd").value="";renderBulkSlots();
 $("courtOverlay").classList.add("show")}
 function closeCourtModal(){$("courtOverlay").classList.remove("show");CAV_COURT=null}
@@ -1797,9 +1797,15 @@ $("cavStatusText").textContent=un?"Not Available":"Available";
 $("cavStatusText").style.color=un?"var(--cancel)":"var(--ok-tx)";
 $("cavToggleBtn").textContent=un?"Mark Available":"Mark Not Available"}
 function courtBlocks(){return Array.isArray(CAV_COURT.blocks)?CAV_COURT.blocks:[]}
-function renderCavSlots(){const wrap=$("cavSlots"),d=dateFieldValue("cavDate");const acts=document.querySelector(".cav-slot-actions");
-if(!d){wrap.innerHTML='<div class="cav-empty">Pick a date first.</div>';$("cavAddBlock").disabled=!0;acts&&(acts.style.display="none");return}
+/* LAYAW-KEEP-SLOTS — the date field fires change on blur, and clicking a slot
+   is what blurs it. Rebuilding here would delete the chip the click is landing
+   on. Only a genuine change of date earns a rebuild. */
+let CAV_SLOTS_FOR=""
+function renderCavSlots(force){const wrap=$("cavSlots"),d=dateFieldValue("cavDate");const acts=document.querySelector(".cav-slot-actions");
+if(!d){CAV_SLOTS_FOR="";wrap.innerHTML='<div class="cav-empty">Pick a date first.</div>';$("cavAddBlock").disabled=!0;acts&&(acts.style.display="none");return}
 acts&&(acts.style.display="flex");
+if(!force&&d===CAV_SLOTS_FOR&&wrap.querySelector(".cav-slot"))return syncAddBtn()
+;CAV_SLOTS_FOR=d;
 const blocked=new Set();courtBlocks().forEach(b=>{if(b.date===d)(b.slots||[]).forEach(sl=>blocked.add(sl))});
 wrap.innerHTML="";buildSlots().forEach(sl=>{const el=document.createElement("div");
 const isBlocked=blocked.has(sl.key);el.className="cav-slot"+(isBlocked?" taken":"");
@@ -1825,11 +1831,17 @@ el.onclick=()=>{el.classList.toggle("on");syncBulkBtns()};wrap.appendChild(el)})
 function bulkSelectAll(on){$("cavBulkSlots").querySelectorAll(".cav-slot").forEach(el=>el.classList.toggle("on",on));syncBulkBtns()}
 function syncBulkBtns(){const any=$("cavBulkSlots").querySelectorAll(".cav-slot.on").length>0;
 const ok=(dateFieldValue("cavBulkStart")||dateFieldValue("cavBulkEnd"))&&any;
-$("cavBulkBlock").disabled=!ok;$("cavBulkUnblock").disabled=!ok}
+/* Pressable either way — see LAYAW-BLOCK-CLICKABLE. cavBulkBlock checks on
+   the press and says what is short. */
+$("cavBulkBlock").disabled=!1;$("cavBulkUnblock").disabled=!1
+;const w=$("cavBulkWhy");if(w)w.textContent=ok?""
+ :!(dateFieldValue("cavBulkStart")||dateFieldValue("cavBulkEnd"))?"Set the dates for the range."
+ :"Pick at least one time slot."}
 function bulkDates(){let s=dateFieldValue("cavBulkStart"),e=dateFieldValue("cavBulkEnd")
 ;if(s&&!e)e=s;if(e&&!s)s=e;if(!s||!e)return[]
 ;return daysBetween(s,e)}
-async function cavBulkBlock(){const dates=bulkDates();if(!dates.length)return toast("Check your dates.");
+async function cavBulkBlock(){if(!bulkDates().length)return toast(($("cavBulkStart").value||$("cavBulkEnd").value)?"I can't read those dates. Please tap the calendar icon and pick them instead of typing.":"Set the dates for the range.")
+;if(!$("cavBulkSlots").querySelectorAll(".cav-slot.on").length)return toast("Pick at least one time slot.");const dates=bulkDates();if(!dates.length)return toast("Check your dates.");
 const picked=[...$("cavBulkSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k);if(!picked.length)return;
 const lab=labelValue("cavBulkLabel","cavBulkLabelOther"),pop=popupValue("cavBulkPopup");
 const bl=courtBlocks().map(blkEntry);dates.forEach(d=>{let ex=bl.find(b=>b.date===d);
@@ -1838,7 +1850,8 @@ else bl.push(blkSetLabels({date:d,slots:picked.slice().sort(),labels:{},notes:{}
 const ok=await saveCourtField({blocks:bl});if(ok){const nt=$("cavBulkNote").value;
 if(nt&&nt.trim()&&CAV_COURT)for(const d of dates)for(const sl of picked)await saveBlockNote(CAV_COURT.id,d,sl,nt);
 $("cavBulkNote").value="";resetLabelPicker("cavBulkLabel","cavBulkLabelOther","cavBulkPopup");renderCavSlots(),renderCavBlocks();toast("Blocked "+dates.length+" day(s).")}}
-async function cavBulkUnblock(){const dates=new Set(bulkDates());if(!dates.size)return toast("Check your dates.");
+async function cavBulkUnblock(){if(!bulkDates().length)return toast("Set the dates for the range.")
+;if(!$("cavBulkSlots").querySelectorAll(".cav-slot.on").length)return toast("Pick at least one time slot.");const dates=new Set(bulkDates());if(!dates.size)return toast("Check your dates.");
 const picked=new Set([...$("cavBulkSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k));if(!picked.size)return;
 let bl=courtBlocks().map(b=>{if(!dates.has(b.date))return blkEntry(b);
 return blkDropLabels(Object.assign(blkEntry(b),{slots:(b.slots||[]).filter(sl=>!picked.has(sl))}),[...picked])}).filter(b=>(b.slots||[]).length>0);
@@ -1945,12 +1958,25 @@ function dateFieldValue(id){const el=$(id);if(!el)return""
 ;try{const d=el.valueAsDate
 ;if(d&&!isNaN(d.getTime()))return d.getUTCFullYear()+"-"+pad2(d.getUTCMonth()+1)+"-"+pad2(d.getUTCDate())}catch(e){}
 /* Last resort: the control is behaving as a text box and holds what was typed. */
+/* A free text box invites "11112026". Read it the way the placeholder asks. */
+;if(/^\d{8}$/.test(v)){const mo=+v.slice(0,2),da=+v.slice(2,4),y=+v.slice(4)
+;if(mo>=1&&mo<=12&&da>=1&&da<=31)return y+"-"+pad2(mo)+"-"+pad2(da)}
 ;const m=v.match(/^(\d{1,4})\D+(\d{1,2})\D+(\d{1,4})$/)
 ;if(m){const a=+m[1],b=+m[2],c=+m[3]
 ;if(a>31&&b>=1&&b<=12&&c>=1&&c<=31)return a+"-"+pad2(b)+"-"+pad2(c)
 ;const mo=a>12?b:a,da=a>12?a:b
 ;if(c>31&&mo>=1&&mo<=12&&da>=1&&da<=31)return c+"-"+pad2(mo)+"-"+pad2(da)}
 ;return ""}
+/* Safari has no date control: the input silently degrades to a text box with
+   no calendar icon and no hint. Chrome users get mm/dd/yyyy segments for free;
+   everyone else has to be told. */
+function labelBareDateFields(){try{
+const probe=document.createElement("input");probe.type="date"
+;if(probe.type==="date")return
+;document.querySelectorAll('input[type="date"]').forEach(el=>{
+if(!el.placeholder)el.placeholder="mm/dd/yyyy"
+;el.setAttribute("inputmode","numeric")})}catch(e){}}
+document.addEventListener("DOMContentLoaded",labelBareDateFields)
 /* Built from numbers. Never give an engine a date string to interpret. */
 function ymdToDate(t){const a=String(t).split("-").map(Number)
 ;return a.length===3&&a.every(n=>!isNaN(n))?new Date(a[0],a[1]-1,a[2]):null}
@@ -2031,7 +2057,7 @@ catch(e){console.error(e),toast("Could not update. Please try again.")}}
 function slotMenuMulti(){if(!SLOTMENU_CTX)return;const court=SLOTMENU_CTX.court;closeSlotMenu();
 openCourtModal(court);
 /* Carry the date across so they only have to pick the times. */
-$("cavDate").value=selectedDate;renderCavSlots();
+$("cavDate").value=selectedDate;renderCavSlots(!0);
 $("cavBulkStart").value=selectedDate;$("cavBulkEnd").value=selectedDate;renderBulkSlots();
 try{syncAddBtn();syncBulkBtns()}catch(e){}}
 
@@ -2046,7 +2072,7 @@ try{renderCourtStatus()}catch(e){}
 /* Blocks affect the schedule grid too — re-render it so blocked slots
    stop showing as Open while the page is open. */
 try{renderSchedHead();renderGrid()}catch(e){}
-if(CAV_COURT){var fresh=COURTS.find(function(c){return c.id===CAV_COURT.id});if(fresh){CAV_COURT=fresh;try{renderCavStatus();renderCavBlocks();if($("cavDate").value)renderCavSlots()}catch(e){}}}
+if(CAV_COURT){var fresh=COURTS.find(function(c){return c.id===CAV_COURT.id});if(fresh){CAV_COURT=fresh;try{renderCavStatus();renderCavBlocks();if(dateFieldValue("cavDate"))renderCavSlots(!0)}catch(e){}}}
 },function(e){console.warn("courts watch:",e)})}
 function watchDay(){dayUnsub&&dayUnsub(),$("dayTitle").textContent=niceDate(selectedDate),
 /* block notes are per-date, so refresh them whenever the day changes */
