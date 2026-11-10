@@ -1390,7 +1390,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <button class="btn-ghost" id="multiCourtClose" style="width:100%;margin-top:6px;padding:13px">Done</button>
 </div>
 </div> <div class="overlay" id="promoOverlay">
-<div class="modal" style="max-width:560px"> <h3>New Promo Code</h3> <p class="sub">Create a discount code your players can enter on the booking page.</p> <div class="fld">
+<div class="modal" style="max-width:560px"> <h3 id="promoTitle">New Promo Code</h3> <p class="sub" id="promoSub">Create a discount code your players can enter on the booking page.</p> <div class="fld">
 <label>Code</label>
 <input id="promoCode" placeholder="SUMMER10" style="text-transform:uppercase"/>
 </div> <div class="form-grid"> <div class="fld">
@@ -2446,10 +2446,12 @@ Array.isArray(t.dateRanges)&&t.dateRanges.length&&a.push(t.dateRanges.map(e=>e.s
 Number(t.minHours)>0&&a.push("min "+t.minHours+"h")
 ;const o=a.length?a.join(" · "):"All days · all times · all dates",s=Number(t.usageCount||0),r=Number(t.usageLimit||0),i=r>0?s+"/"+r+" used"+(s>=r?" · LIMIT REACHED":""):s>0?s+"× used":"unlimited uses",c=!1!==t.active,d=document.createElement("div")
 ;d.className="promo-row",
-d.innerHTML='<div class="pr-main"><div class="pr-code">'+esc(t.code)+' <span class="badge '+(c?"active":"disabled")+'">'+(c?"Active":"Off")+'</span></div><div class="pr-sub">'+n+" · "+esc(o)+" · "+esc(i)+'</div></div><div class="pr-act"><button class="mini-btn" data-toggle="'+t.id+'">'+(c?"Turn off":"Turn on")+'</button><button class="mini-btn danger" data-del="'+t.id+'">Delete</button></div>',
+d.innerHTML='<div class="pr-main"><div class="pr-code">'+esc(t.code)+' <span class="badge '+(c?"active":"disabled")+'">'+(c?"Active":"Off")+'</span></div><div class="pr-sub">'+n+" · "+esc(o)+" · "+esc(i)+'</div></div><div class="pr-act"><button class="mini-btn" data-edit="'+t.id+'">Edit</button><button class="mini-btn" data-toggle="'+t.id+'">'+(c?"Turn off":"Turn on")+'</button><button class="mini-btn danger" data-del="'+t.id+'">Delete</button></div>',
 e.appendChild(d)}),e.querySelectorAll("[data-toggle]").forEach(e=>e.onclick=async()=>{
 const t=e.getAttribute("data-toggle"),n=PROMOS_ALL.find(e=>e.id===t);try{await db.collection("promos").doc(t).update({
 active:!(!1!==n.active)}),renderPromos()}catch(e){console.error(e),toast("Could not update.")}}),
+e.querySelectorAll("[data-edit]").forEach(e=>e.onclick=()=>{
+const p=PROMOS_ALL.find(x=>x.id===e.getAttribute("data-edit"));p&&openPromoModal(p)}),
 e.querySelectorAll("[data-del]").forEach(e=>e.onclick=async()=>{if(confirm("Delete this promo code?"))try{
 await db.collection("promos").doc(e.getAttribute("data-del")).delete(),toast("Promo deleted."),renderPromos()}catch(e){
 console.error(e),toast("Could not delete.")}})}catch(t){
@@ -2459,12 +2461,33 @@ const e=document.createElement("div")
 e.querySelector(".rm").onclick=()=>e.remove(),e}function dateRow(){const e=document.createElement("div")
 ;return e.className="win-row",
 e.innerHTML='<input type="date" class="d-start"><span style="color:var(--muted)">to</span><input type="date" class="d-end"><button class="rm" type="button">✕</button>',
-e.querySelector(".rm").onclick=()=>e.remove(),e}function openPromoModal(){$("promoCode").value="",
-$("promoType").value="percent",$("promoValue").value="",$("promoActive").checked=!0,$("promoErr").textContent="",
-$("promoUsageLimit").value="",$("promoMinHours").value="";const e=$("promoDays");e.innerHTML="",DOW.forEach((t,n)=>{
-const a=document.createElement("button");a.type="button",a.className="day-btn",a.textContent=t,a.dataset.dow=n,
-a.onclick=()=>a.classList.toggle("on"),e.appendChild(a)}),$("promoTimes").innerHTML="",$("promoDates").innerHTML="",
-$("promoOverlay").classList.add("show")}function payIcon(e){
+e.querySelector(".rm").onclick=()=>e.remove(),e}/* LAYAW-PROMO-EDIT — null for a new code, otherwise the promo being changed.
+   promoSave reads it to decide between add() and update(). */
+let EDITING_PROMO=null
+function openPromoModal(p){EDITING_PROMO=p||null
+;$("promoTitle").textContent=p?"Edit Promo Code":"New Promo Code"
+;$("promoSub").textContent=p?"Changes apply the next time a player enters this code. The number of times it has already been used is kept.":"Create a discount code your players can enter on the booking page."
+;$("promoSave").textContent=p?"Save changes":"Save promo"
+;$("promoCode").value=p?String(p.code||""):""
+;$("promoType").value=p&&p.discountType?p.discountType:"percent"
+;$("promoValue").value=p?p.discountValue:""
+;$("promoActive").checked=p?!1!==p.active:!0
+;$("promoErr").textContent=""
+;$("promoUsageLimit").value=p&&Number(p.usageLimit)>0?p.usageLimit:""
+;$("promoMinHours").value=p&&Number(p.minHours)>0?p.minHours:""
+;const e=$("promoDays");e.innerHTML="";const on=p&&Array.isArray(p.days)?p.days.map(Number):[]
+;DOW.forEach((t,n)=>{
+const a=document.createElement("button");a.type="button",a.className="day-btn"+(on.indexOf(n)>=0?" on":""),a.textContent=t,a.dataset.dow=n,
+a.onclick=()=>a.classList.toggle("on"),e.appendChild(a)})
+;$("promoTimes").innerHTML="";if(p&&Array.isArray(p.timeWindows))p.timeWindows.forEach(w=>{
+const r=winRow();r.querySelector(".w-start").value=minToHM(w.start);r.querySelector(".w-end").value=minToHM(w.end)
+;$("promoTimes").appendChild(r)})
+;$("promoDates").innerHTML="";if(p&&Array.isArray(p.dateRanges))p.dateRanges.forEach(d=>{
+const r=dateRow();r.querySelector(".d-start").value=d.start||"";r.querySelector(".d-end").value=d.end||""
+;$("promoDates").appendChild(r)})
+;$("promoOverlay").classList.add("show")}
+/* winRow()'s inputs want HH:MM; the stored windows are minutes past midnight. */
+function minToHM(m){m=Number(m||0);return pad2(Math.floor(m/60)%24)+":"+pad2(m%60)}function payIcon(e){
 return'<div class="kpi-ico '+e+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg></div>'
 }function payKpi(e,t,n,a){
 return'<div class="kpi">'+payIcon(n)+'<div class="kpi-body"><div class="kl">'+e+'</div><div class="kn">'+t+"</div>"+(a?'<div class="kd">'+a+"</div>":"")+"</div></div>"
@@ -2541,11 +2564,22 @@ start:hmMin(t),end:hmMin(n)}))
 }),s)return void($("promoErr").textContent="Each time window's end must be after its start.");const r=[];let i=!1
 ;if($("promoDates").querySelectorAll(".win-row").forEach(e=>{
 const t=e.querySelector(".d-start").value,n=e.querySelector(".d-end").value;t&&n&&(n<t?i=!0:r.push({start:t,end:n}))}),
-i)return void($("promoErr").textContent="Each date range's end must be on or after its start.");const c=$("promoSave")
-;c.disabled=!0,c.textContent="Saving…";try{await db.collection("promos").add({code:e,discountType:t,discountValue:n,
+i)return void($("promoErr").textContent="Each date range's end must be on or after its start.");/* Two promos with the same code means the booking page silently honours one
+   and ignores the other — PROMOS.find() takes the first it meets. */
+;const clash=(PROMOS_ALL||[]).find(p=>String(p.code||"").toUpperCase()===e&&(!EDITING_PROMO||p.id!==EDITING_PROMO.id))
+;if(clash)return void($("promoErr").textContent='There is already a promo code called "'+e+'". Use a different code.')
+;const c=$("promoSave"),wasEditing=EDITING_PROMO
+;c.disabled=!0,c.textContent="Saving…";try{
+const body={code:e,discountType:t,discountValue:n,
 active:$("promoActive").checked,days:a,timeWindows:o,dateRanges:r,usageLimit:Number($("promoUsageLimit").value||0),
-usageCount:0,minHours:Number($("promoMinHours").value||0),createdAt:firebase.firestore.FieldValue.serverTimestamp()}),
-$("promoOverlay").classList.remove("show"),toast("Promo code saved."),renderPromos()}catch(e){console.error(e),
+minHours:Number($("promoMinHours").value||0)}
+/* update(), not set(): usageCount and createdAt are history and stay put. */
+;if(wasEditing)await db.collection("promos").doc(wasEditing.id).update(body)
+;else await db.collection("promos").add(Object.assign({},body,{usageCount:0,
+createdAt:firebase.firestore.FieldValue.serverTimestamp()}))
+;EDITING_PROMO=null,
+$("promoOverlay").classList.remove("show"),toast(wasEditing?"Promo code updated.":"Promo code saved."),renderPromos()}catch(e){console.error(e),
+c.textContent=EDITING_PROMO?"Save changes":"Save promo",
 $("promoErr").textContent="Could not save. Make sure the promos rule is added in Firebase."}finally{c.disabled=!1,
 c.textContent="Save promo"}},$("partSearch")&&($("partSearch").oninput=drawParticipants),
 $("exportParticipantsBtn")&&($("exportParticipantsBtn").onclick=()=>{
