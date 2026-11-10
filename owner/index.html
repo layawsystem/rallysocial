@@ -1797,7 +1797,7 @@ $("cavStatusText").textContent=un?"Not Available":"Available";
 $("cavStatusText").style.color=un?"var(--cancel)":"var(--ok-tx)";
 $("cavToggleBtn").textContent=un?"Mark Available":"Mark Not Available"}
 function courtBlocks(){return Array.isArray(CAV_COURT.blocks)?CAV_COURT.blocks:[]}
-function renderCavSlots(){const wrap=$("cavSlots"),d=$("cavDate").value;const acts=document.querySelector(".cav-slot-actions");
+function renderCavSlots(){const wrap=$("cavSlots"),d=dateFieldValue("cavDate");const acts=document.querySelector(".cav-slot-actions");
 if(!d){wrap.innerHTML='<div class="cav-empty">Pick a date first.</div>';$("cavAddBlock").disabled=!0;acts&&(acts.style.display="none");return}
 acts&&(acts.style.display="flex");
 const blocked=new Set();courtBlocks().forEach(b=>{if(b.date===d)(b.slots||[]).forEach(sl=>blocked.add(sl))});
@@ -1807,7 +1807,7 @@ el.textContent=hourLabel(sl.mins);el.dataset.k=sl.key;
 if(!isBlocked)el.onclick=()=>{el.classList.toggle("on");syncAddBtn()};
 wrap.appendChild(el)});syncAddBtn()}
 function syncAddBtn(){const any=$("cavSlots").querySelectorAll(".cav-slot.on").length>0
-;const d=$("cavDate").value;$("cavAddBlock").disabled=!1
+;const d=dateFieldValue("cavDate");$("cavAddBlock").disabled=!1
 /* LAYAW-BLOCK-WHY — a slot already blocked is drawn struck through and cannot
    be picked, so on a day that is fully blocked there is nothing to select and
    the button can never light up. Say so, rather than leaving it dead. */
@@ -1824,11 +1824,11 @@ el.className="cav-slot";el.textContent=hourLabel(sl.mins);el.dataset.k=sl.key;
 el.onclick=()=>{el.classList.toggle("on");syncBulkBtns()};wrap.appendChild(el)});syncBulkBtns()}
 function bulkSelectAll(on){$("cavBulkSlots").querySelectorAll(".cav-slot").forEach(el=>el.classList.toggle("on",on));syncBulkBtns()}
 function syncBulkBtns(){const any=$("cavBulkSlots").querySelectorAll(".cav-slot.on").length>0;
-const ok=$("cavBulkStart").value&&$("cavBulkEnd").value&&any;
+const ok=(dateFieldValue("cavBulkStart")||dateFieldValue("cavBulkEnd"))&&any;
 $("cavBulkBlock").disabled=!ok;$("cavBulkUnblock").disabled=!ok}
-function bulkDates(){const s=$("cavBulkStart").value,e=$("cavBulkEnd").value;if(!s||!e)return[];
-const out=[],d=new Date(s+"T00:00:00"),end=new Date(e+"T00:00:00");if(end<d)return[];
-let guard=0;while(d<=end&&guard<400){out.push(d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()));d.setDate(d.getDate()+1);guard++}return out}
+function bulkDates(){let s=dateFieldValue("cavBulkStart"),e=dateFieldValue("cavBulkEnd")
+;if(s&&!e)e=s;if(e&&!s)s=e;if(!s||!e)return[]
+;return daysBetween(s,e)}
 async function cavBulkBlock(){const dates=bulkDates();if(!dates.length)return toast("Check your dates.");
 const picked=[...$("cavBulkSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k);if(!picked.length)return;
 const lab=labelValue("cavBulkLabel","cavBulkLabelOther"),pop=popupValue("cavBulkPopup");
@@ -1860,8 +1860,8 @@ renderCourtStatus();return!0}catch(e){console.error(e);toast("Could not update. 
 async function cavToggleOverall(){const un="unavailable"===String(CAV_COURT.status||"").toLowerCase();
 const ok=await saveCourtField({status:un?"":"unavailable"});
 if(ok){renderCavStatus();toast(un?"Court marked available.":"Court marked not available.")}}
-async function cavAddBlock(){const d=$("cavDate").value
-;if(!d)return toast("Pick a date first.");
+async function cavAddBlock(){const d=dateFieldValue("cavDate")
+;if(!d)return toast($("cavDate").value?"I can't read that date. Please tap the calendar icon and pick the date instead of typing it.":"Pick a date first.");
 const picked=[...$("cavSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k)
 ;if(!picked.length){const all=$("cavSlots").querySelectorAll(".cav-slot").length
 ,taken=$("cavSlots").querySelectorAll(".cav-slot.taken").length
@@ -1920,7 +1920,7 @@ function mcSelectAllSlots(on){$("mcSlots").querySelectorAll(".cav-slot").forEach
 function syncMcButtons(){const nCourts=mcSelectedCourts().length;
 const nSlots=$("mcSlots").querySelectorAll(".cav-slot.on").length;
 /* Either field alone means a single day; mcDates() mirrors the other. */
-const hasDates=$("mcStart").value||$("mcEnd").value;
+const hasDates=dateFieldValue("mcStart")||dateFieldValue("mcEnd");
 $("mcCount").textContent=nCourts?nCourts+" court"+(1===nCourts?"":"s")+" selected.":"No courts selected.";
 $("mcMarkNA").disabled=!nCourts;$("mcMarkAvail").disabled=!nCourts;
 /* LAYAW-BLOCK-CLICKABLE — deliberately NOT disabled. If an event is missed,
@@ -1935,12 +1935,35 @@ const ok=nCourts&&nSlots&&hasDates;$("mcBlock").disabled=!1;$("mcUnblock").disab
  :!hasDates?"Set the date you want to block."
  :!nSlots?"Pick at least one time slot above."
  :"Applies to every selected court, on every day from start to end date."}
-function mcDates(){let s=$("mcStart").value,e=$("mcEnd").value
+/* LAYAW-DATE-READ — a date input is not always willing to tell you what it
+   is showing. Ask three ways before concluding the field is empty. */
+function dateFieldValue(id){const el=$(id);if(!el)return""
+;const v=String(el.value||"").trim()
+;if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v
+/* valueAsDate is the typed accessor; it sidesteps string formatting entirely
+   and is UTC midnight, so read it back in UTC. */
+;try{const d=el.valueAsDate
+;if(d&&!isNaN(d.getTime()))return d.getUTCFullYear()+"-"+pad2(d.getUTCMonth()+1)+"-"+pad2(d.getUTCDate())}catch(e){}
+/* Last resort: the control is behaving as a text box and holds what was typed. */
+;const m=v.match(/^(\d{1,4})\D+(\d{1,2})\D+(\d{1,4})$/)
+;if(m){const a=+m[1],b=+m[2],c=+m[3]
+;if(a>31&&b>=1&&b<=12&&c>=1&&c<=31)return a+"-"+pad2(b)+"-"+pad2(c)
+;const mo=a>12?b:a,da=a>12?a:b
+;if(c>31&&mo>=1&&mo<=12&&da>=1&&da<=31)return c+"-"+pad2(mo)+"-"+pad2(da)}
+;return ""}
+/* Built from numbers. Never give an engine a date string to interpret. */
+function ymdToDate(t){const a=String(t).split("-").map(Number)
+;return a.length===3&&a.every(n=>!isNaN(n))?new Date(a[0],a[1]-1,a[2]):null}
+function daysBetween(s,e){const d=ymdToDate(s),end=ymdToDate(e)
+;if(!d||!end||isNaN(d.getTime())||isNaN(end.getTime())||end<d)return[]
+;const out=[];let guard=0
+;while(d<=end&&guard<400){out.push(d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()));d.setDate(d.getDate()+1);guard++}
+;return out}
+function mcDates(){let s=dateFieldValue("mcStart"),e=dateFieldValue("mcEnd")
 /* One date means one day. Filling the same value twice was a rule the
    software could apply for them. */
-;if(s&&!e)e=s;if(e&&!s)s=e;if(!s||!e)return[];
-const out=[],d=new Date(s+"T00:00:00"),end=new Date(e+"T00:00:00");if(end<d)return[];
-let guard=0;while(d<=end&&guard<400){out.push(d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()));d.setDate(d.getDate()+1);guard++}return out}
+;if(s&&!e)e=s;if(e&&!s)s=e;if(!s||!e)return[]
+;return daysBetween(s,e)}
 async function mcSaveCourt(court,patch){try{await db.collection("courts").doc(court.id).update(patch);
 const idx=COURTS.findIndex(c=>c.id===court.id);if(idx>=0)Object.assign(COURTS[idx],patch);return!0}
 catch(e){console.error(e);return!1}}
@@ -1950,7 +1973,9 @@ renderCourtStatus();try{renderSchedHead();renderGrid()}catch(e){}
 toast(ok+" court"+(1===ok?"":"s")+(makeUnavail?" marked not available.":" marked available."))}
 async function mcApplyBlocks(unblock){const courts=mcSelectedCourts(),dates=mcDates();
 if(!courts.length)return toast("Select at least one court at the top of this window.");
-if(!dates.length)return toast("Set the date you want to block.");
+if(!dates.length)return toast(($("mcStart").value||$("mcEnd").value)
+?"I can't read that date. Please tap the calendar icon and pick the date instead of typing it."
+:"Set the date you want to block.");
 const picked=[...$("mcSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k);
 if(!picked.length)return toast("Pick at least one time slot.");
 let ok=0;
