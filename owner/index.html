@@ -1807,7 +1807,7 @@ el.textContent=hourLabel(sl.mins);el.dataset.k=sl.key;
 if(!isBlocked)el.onclick=()=>{el.classList.toggle("on");syncAddBtn()};
 wrap.appendChild(el)});syncAddBtn()}
 function syncAddBtn(){const any=$("cavSlots").querySelectorAll(".cav-slot.on").length>0
-;const d=$("cavDate").value;$("cavAddBlock").disabled=!(d&&any)
+;const d=$("cavDate").value;$("cavAddBlock").disabled=!1
 /* LAYAW-BLOCK-WHY — a slot already blocked is drawn struck through and cannot
    be picked, so on a day that is fully blocked there is nothing to select and
    the button can never light up. Say so, rather than leaving it dead. */
@@ -1860,9 +1860,12 @@ renderCourtStatus();return!0}catch(e){console.error(e);toast("Could not update. 
 async function cavToggleOverall(){const un="unavailable"===String(CAV_COURT.status||"").toLowerCase();
 const ok=await saveCourtField({status:un?"":"unavailable"});
 if(ok){renderCavStatus();toast(un?"Court marked available.":"Court marked not available.")}}
-async function cavAddBlock(){const d=$("cavDate").value;if(!d)return;
-const picked=[...$("cavSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k);
-if(!picked.length)return;
+async function cavAddBlock(){const d=$("cavDate").value
+;if(!d)return toast("Pick a date first.");
+const picked=[...$("cavSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k)
+;if(!picked.length){const all=$("cavSlots").querySelectorAll(".cav-slot").length
+,taken=$("cavSlots").querySelectorAll(".cav-slot.taken").length
+;return toast(all&&taken===all?"Every slot on this date is already blocked. Remove that date in the list below first.":"Pick at least one time slot.")}
 const lab=labelValue("cavLabel","cavLabelOther"),pop=popupValue("cavPopup");
 const bl=courtBlocks().map(blkEntry);const existing=bl.find(b=>b.date===d);
 if(existing){existing.slots=[...new Set([...(existing.slots||[]),...picked])].sort();blkSetLabels(existing,picked,lab,pop)}
@@ -1916,19 +1919,26 @@ el.onclick=()=>{el.classList.toggle("on");syncMcButtons()};wrap.appendChild(el)}
 function mcSelectAllSlots(on){$("mcSlots").querySelectorAll(".cav-slot").forEach(el=>el.classList.toggle("on",on));syncMcButtons()}
 function syncMcButtons(){const nCourts=mcSelectedCourts().length;
 const nSlots=$("mcSlots").querySelectorAll(".cav-slot.on").length;
-const hasDates=$("mcStart").value&&$("mcEnd").value;
+/* Either field alone means a single day; mcDates() mirrors the other. */
+const hasDates=$("mcStart").value||$("mcEnd").value;
 $("mcCount").textContent=nCourts?nCourts+" court"+(1===nCourts?"":"s")+" selected.":"No courts selected.";
 $("mcMarkNA").disabled=!nCourts;$("mcMarkAvail").disabled=!nCourts;
-const ok=nCourts&&nSlots&&hasDates;$("mcBlock").disabled=!ok;$("mcUnblock").disabled=!ok
+/* LAYAW-BLOCK-CLICKABLE — deliberately NOT disabled. If an event is missed,
+   a disabled button is a dead end the user cannot interrogate; mcApplyBlocks
+   re-reads everything on the press and says what is short. */
+const ok=nCourts&&nSlots&&hasDates;$("mcBlock").disabled=!1;$("mcUnblock").disabled=!1
 /* LAYAW-BLOCK-WHY — the Courts list is at the top of this modal and the button
    is at the bottom, so by the time you press it the checkboxes are off screen.
    Name the missing piece here, where the question is being asked. */
 ;const why=$("mcWhy");if(why)why.textContent=
  !nCourts?"Select at least one court at the top of this window."
- :!hasDates?"Set a start and end date. For a single day, use the same date in both."
+ :!hasDates?"Set the date you want to block."
  :!nSlots?"Pick at least one time slot above."
  :"Applies to every selected court, on every day from start to end date."}
-function mcDates(){const s=$("mcStart").value,e=$("mcEnd").value;if(!s||!e)return[];
+function mcDates(){let s=$("mcStart").value,e=$("mcEnd").value
+/* One date means one day. Filling the same value twice was a rule the
+   software could apply for them. */
+;if(s&&!e)e=s;if(e&&!s)s=e;if(!s||!e)return[];
 const out=[],d=new Date(s+"T00:00:00"),end=new Date(e+"T00:00:00");if(end<d)return[];
 let guard=0;while(d<=end&&guard<400){out.push(d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()));d.setDate(d.getDate()+1);guard++}return out}
 async function mcSaveCourt(court,patch){try{await db.collection("courts").doc(court.id).update(patch);
@@ -1939,9 +1949,10 @@ let ok=0;for(const c of courts){if(await mcSaveCourt(c,{status:makeUnavail?"unav
 renderCourtStatus();try{renderSchedHead();renderGrid()}catch(e){}
 toast(ok+" court"+(1===ok?"":"s")+(makeUnavail?" marked not available.":" marked available."))}
 async function mcApplyBlocks(unblock){const courts=mcSelectedCourts(),dates=mcDates();
-if(!courts.length||!dates.length)return toast("Check your courts and dates.");
+if(!courts.length)return toast("Select at least one court at the top of this window.");
+if(!dates.length)return toast("Set the date you want to block.");
 const picked=[...$("mcSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k);
-if(!picked.length)return;
+if(!picked.length)return toast("Pick at least one time slot.");
 let ok=0;
 for(const c of courts){
 const cur=Array.isArray(c.blocks)?c.blocks.slice():[];
@@ -2275,6 +2286,8 @@ $("mcBlock").onclick=()=>mcApplyBlocks(!1),
 $("mcUnblock").onclick=()=>mcApplyBlocks(!0),
 $("mcStart").onchange=()=>syncMcButtons(),
 $("mcEnd").onchange=()=>syncMcButtons(),
+$("mcStart").oninput=()=>syncMcButtons(),
+$("mcEnd").oninput=()=>syncMcButtons(),
 $("courtOverlay").onclick=e=>{e.target===$("courtOverlay")&&closeCourtModal()},
 $("cavToggleBtn").onclick=()=>cavToggleOverall(),
 $("cavAddBlock").onclick=()=>cavAddBlock(),
@@ -2286,7 +2299,7 @@ $("cavBulkBlock").onclick=()=>cavBulkBlock(),
 $("cavBulkUnblock").onclick=()=>cavBulkUnblock(),
 $("cavBulkStart").onchange=()=>syncBulkBtns(),
 $("cavBulkEnd").onchange=()=>syncBulkBtns(),
-$("cavDate").onchange=()=>renderCavSlots(),
+$("cavDate").onchange=()=>renderCavSlots(),$("cavDate").oninput=()=>renderCavSlots(),
 $("supportOverlay").onclick=e=>{e.target===$("supportOverlay")&&$("supportOverlay").classList.remove("show")},
 $("addAdminBtn").onclick=async()=>{const e=$("newAdminName").value.trim(),t=$("newAdminPin").value.trim()
 ;if($("adminErr").textContent="",!e)return void($("adminErr").textContent="Please enter the staff name.")
