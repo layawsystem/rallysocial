@@ -183,6 +183,12 @@ table.slots .time-cell{font-size:13px;font-weight:700;color:var(--text);padding:
 .cell-past{background:var(--past-bg);color:var(--past-tx);cursor:not-allowed;box-shadow:inset 0 0 0 1px var(--past-bd)}
 .cell-blocked{background:#3a2416;color:#E0954A;cursor:not-allowed;box-shadow:inset 0 0 0 1px #6b4420}
 .cell-loading{background:var(--past-bg);color:var(--past-tx);cursor:progress;box-shadow:inset 0 0 0 1px var(--past-bd);opacity:.55}
+
+/* LAYAW-REMEMBER-ME */
+.remember-row{display:flex;align-items:flex-start;gap:10px;margin-top:12px;cursor:pointer;user-select:none}
+.remember-row input{width:17px;height:17px;margin-top:1px;flex:none;accent-color:var(--sel-bg);cursor:pointer}
+.remember-row span{font-size:13px;line-height:1.45;color:var(--text-2)}
+.remember-note{font-size:12px;color:var(--muted);margin:6px 0 0 27px}
 /* LAYAW-CLOSED-DAY — the whole venue is shut for this date. The grid stays
    visible as texture so the page does not look broken, but it carries no text
    and takes no taps; the message on top is the only thing to read. */
@@ -840,7 +846,7 @@ table.slots .cell-inner.cell-blocked{max-width:120px;overflow:hidden;text-overfl
 </div> <div>
 <label class="fl">Mobile number</label>
 <input type="tel" id="contactInput" placeholder="09XX XXX XXXX" autocomplete="tel"/>
-<div class="sum-note" id="prefillNote" style="display:none;margin-top:10px">Filled in from your last booking on this device. <button type="button" class="linkish" id="clearBooker">Not you? Clear</button></div>
+<div class="sum-note" id="prefillNote" style="display:none;margin-top:10px">Filled in from your last booking on this device. <button type="button" class="linkish" id="clearBooker">Not you? Clear</button></div><label class="remember-row"><input type="checkbox" id="rememberMe"/><span>Remember my name and number, so I do not have to type them again when I book from another phone or computer.</span></label><div class="remember-note" id="rememberNote" style="display:none"></div>
 </div> </div><div class="card" id="agreementCard" style="display:none"> <h3>First time booking with us</h3> <p class="sum-note agr-intro">Please read and accept the Participant Agreement. You only do this once &mdash; next time you book with this email address, we will skip straight to payment.</p> <div id="agreementBody"></div> <p class="agr-scrollnote" id="agrEffective"></p> <div class="field-gap"> <label class="fl">Date of birth</label> <input type="date" id="dobInput"/> </div> <div class="field-gap"> <label class="fl">Home address (optional)</label> <input type="text" id="addrInput" placeholder="House/unit, street, barangay, city"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; name</label> <input type="text" id="ecNameInput" placeholder="Full name"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; relationship</label> <input type="text" id="ecRelInput" placeholder="Spouse, parent, sibling, friend"/> </div> <div class="field-gap"> <label class="fl">Emergency contact &mdash; mobile number</label> <input type="tel" id="ecNumInput" placeholder="09XX XXX XXXX"/> </div> <label class="agr-accept" for="agrAccept"> <input type="checkbox" id="agrAccept"/> <span>I have read, understood, and voluntarily agree to be bound by this Participant Agreement. I understand it includes a release of liability and an assumption of risk.</span> </label> </div> <div class="card"> <h3>Select a payment method</h3> <p class="sum-note" style="margin:-6px 0 14px">Choose one option below.</p> <div class="pay-methods" id="payMethods">
 </div> <div class="pay-detail" id="payDetail" style="display:none">
 </div> </div> <div class="card"> <h3>Upload receipt</h3> <p class="sum-note" style="margin:-6px 0 14px">Upload your payment proof. <strong style="color:var(--cancel)">Required.</strong>
@@ -945,6 +951,9 @@ const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str))
    they reach the next field instead of appearing after they leave it. */
 function agreementGateSoon(){clearTimeout(agreementTypeTimer)
 ;agreementTypeTimer=setTimeout(refreshAgreementGate,600)}
+let profileTypeTimer=0
+function profileSoon(){clearTimeout(profileTypeTimer)
+;profileTypeTimer=setTimeout(maybeFillFromProfile,600)}
 /* Tap, not hover: hover does not exist on a phone, and that is where almost
    every booking is made. */
 ;function openSlotInfo(title,body){$("slotInfoTitle").textContent=title
@@ -1175,7 +1184,48 @@ pendingSet=new Set;const now=Date.now();e.forEach(e=>{const t=e.data();if("cance
 ;if(!hu||hu<now)return;if(t.bookingId&&(t.bookingId===reservedBookingId||t.bookingId===releasingBookingId))return
 ;(t.slots||[]).forEach(e=>pendingSet.add(t.court+"|"+e));return}
 ;const o="confirmed"===t.status?bookedSet:pendingSet;(t.slots||[]).forEach(e=>o.add(t.court+"|"+e))}),availReady=!0,renderGrid()
-},e=>console.error(e)))}/* Set by renderGrid before it builds a single cell, read inside the loop. */
+},e=>console.error(e)))}/* LAYAW-REMEMBER-ME — the stored name and number for a player who asked us
+   to keep them. Keyed by the hash of the email, like the signature record, so
+   the id itself is not an address. */
+let PROFILE_CACHE={},profileLookup=null,profileFilled=""
+function profileDoc(h){return db.collection("playerProfiles").doc(h)}
+async function lookupProfile(email){if(email in PROFILE_CACHE)return PROFILE_CACHE[email]
+;const h=await sha256Hex(email);if(!h)return null
+;try{const d=await profileDoc(h).get()
+;const v=d.exists?d.data():null
+;const p=v&&(v.name||v.contact)?{name:String(v.name||""),contact:String(v.contact||"")}:null
+;PROFILE_CACHE[email]=p;return p}catch(e){return null}}
+/* Fills only what is still empty — never overwrites something being typed. */
+async function maybeFillFromProfile(){const box=$("rememberMe");if(!box)return
+;const email=($("emailInput").value||"").trim().toLowerCase()
+;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){profileFilled="";return}
+;if(profileFilled===email)return
+;if(profileLookup&&profileLookup.email===email)return profileLookup.promise
+;const run=(async()=>{const p=await lookupProfile(email)
+/* They typed on while we waited; that keystroke owns the form now. */
+;if(($("emailInput").value||"").trim().toLowerCase()!==email)return
+;profileFilled=email
+;if(!p)return
+;box.checked=!0
+;let filled=!1
+;[["nameInput",p.name],["contactInput",p.contact]].forEach(pair=>{
+const el=$(pair[0]);if(el&&!el.value&&pair[1]){el.value=pair[1];filled=!0}})
+;const note=$("rememberNote");if(note&&filled){
+note.textContent="Filled in from your last booking. Untick the box above if you would rather we forgot these."
+;note.style.display="block"}})()
+;profileLookup={email:email,promise:run}
+;try{await run}finally{if(profileLookup&&profileLookup.email===email)profileLookup=null}}
+/* Written after the booking commits, so nothing is stored for a checkout that
+   was abandoned. Unticking deletes what we hold — that is how consent is
+   withdrawn, and it has to actually remove the record. */
+async function saveProfileChoice(name,contact,email){try{
+const box=$("rememberMe");if(!box)return
+;const h=await sha256Hex(String(email||"").trim().toLowerCase());if(!h)return
+;delete PROFILE_CACHE[String(email||"").trim().toLowerCase()]
+;if(box.checked)await profileDoc(h).set({name:name,contact:contact,
+updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:!0})
+;else await profileDoc(h).delete()}catch(e){console.warn("profile:",e)}}
+/* Set by renderGrid before it builds a single cell, read inside the loop. */
 let CLOSED_DAY=null
 /* Null unless every court is blocked for every slot of the selected date. The
    label and note come from the first blocked slot that carries them, which is
@@ -1431,13 +1481,18 @@ window.innerWidth<=1e3&&($("mobileBar").style.display="flex"),$("nameInput").val
 $("emailInput").value="",appliedPromo=null,$("voucherInput")&&($("voucherInput").value=""),setVoucherMsg("",!0),
 $("receiptPreview").style.display="none";resetAgreementFields();const e=$("uploadBox").querySelector(".big")
 ;e&&(e.textContent="☁️ Tap to upload image"),renderGrid(),updateSummary(),renderCalendar(),window.scrollTo({top:0,
-behavior:"smooth"})},$("emailInput").addEventListener("change",refreshAgreementGate),$("emailInput").addEventListener("blur",refreshAgreementGate),$("emailInput").addEventListener("input",agreementGateSoon),
+behavior:"smooth"})},$("emailInput").addEventListener("change",()=>{refreshAgreementGate();maybeFillFromProfile()}),
+$("emailInput").addEventListener("blur",()=>{refreshAgreementGate();maybeFillFromProfile()}),
+$("emailInput").addEventListener("input",()=>{agreementGateSoon();profileSoon()}),
 /* A phone gets handed around at a venue. One tap has to be enough for the
    next person to get an empty form, and to stop this device offering the
    previous booker's details again. */
 $("clearBooker")&&($("clearBooker").onclick=()=>{clearBooker()
 ;["nameInput","contactInput","emailInput"].forEach(id=>{const el=$(id);if(el)el.value=""})
-;$("prefillNote").style.display="none",resetAgreementFields(),$("emailInput").focus()}),
+;$("prefillNote").style.display="none",resetAgreementFields()
+;profileFilled="";const rb=$("rememberMe");if(rb)rb.checked=!1
+;const rn=$("rememberNote");if(rn)rn.style.display="none"
+;$("emailInput").focus()}),
 $("slotInfoClose")&&($("slotInfoClose").onclick=()=>$("slotInfoOverlay").classList.remove("show")),
 $("slotInfoOverlay")&&($("slotInfoOverlay").onclick=e=>{
 e.target===$("slotInfoOverlay")&&$("slotInfoOverlay").classList.remove("show")}),
@@ -1516,7 +1571,7 @@ await db.collection("receipts").doc(r).set({bookingId:r,image:receiptData,
 createdAt:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){console.warn("receipt save failed",e)}
 if(appliedPromo&&appliedPromo.id)try{await db.collection("promos").doc(appliedPromo.id).update({
 usageCount:firebase.firestore.FieldValue.increment(1)})}catch(e){console.warn("promo usage:",e)}
-saveBooker(e,t,o),
+saveBooker(e,t,o),saveProfileChoice(e,t,o),
 $("checkoutView").style.display="none",$("successView").style.display="block",clearHoldTimer(),cart.clear(),
 appliedPromo=null,$("voucherInput")&&($("voucherInput").value=""),setVoucherMsg("",!0),$("successId").textContent=r,
 $("viewStatusBtn").onclick=()=>{window.location.href="status.html?id="+encodeURIComponent(r)},window.scrollTo({top:0,
