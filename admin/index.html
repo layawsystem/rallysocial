@@ -903,7 +903,7 @@ async function removeBlock(date){const bl0=courtBlocks().find(function(x){return
 const ok=await saveCourtField({blocks:bl});
 if(ok){if(CAV_COURT){const gone=(courtBlocks().find(function(x){return x.date===date})||{}).slots||[];const had=(bl0||[]).slots||[];for(const sl of had)await saveBlockNote(CAV_COURT.id,date,sl,"")}
 renderCavSlots();renderCavBlocks();toast("Block removed.")}}
-function renderCavBlocks(){const wrap=$("cavBlockList"),bl=courtBlocks();
+function renderCavBlocks(){const wrap=$("cavBlockList"),bl=prunePastBlocks(courtBlocks());
 if(!bl.length){wrap.innerHTML='<div class="cav-empty">No blocks set.</div>';return}
 wrap.innerHTML="";bl.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(b=>{
 const item=document.createElement("div");item.className="cav-block-item";
@@ -911,7 +911,17 @@ const slots=(b.slots||[]).slice().sort().map(sl=>hourLabel(hm2min(sl))).join(", 
 item.innerHTML='<div class="bd"><strong>'+esc(niceD(b.date))+'</strong></div>';const bd=item.querySelector(".bd");(b.slots||[]).slice().sort().forEach(function(sl){const row=document.createElement("div");row.style.cssText="display:flex;align-items:center;gap:8px;margin-top:6px";const lab=document.createElement("span");lab.textContent=hourLabel(hm2min(sl));lab.style.cssText="font-size:12px;color:var(--muted);min-width:74px;flex-shrink:0";const inp=document.createElement("input");inp.type="text";inp.className="blk-note";inp.placeholder="Note — who is this for?";inp.value=CAV_COURT?noteFor(CAV_COURT.id,b.date,sl):"";inp.style.cssText="flex:1;padding:6px 9px;font:inherit;font-size:12.5px;border:1px solid var(--input-line);border-radius:8px;background:var(--input-bg);color:var(--text)";inp.onchange=async function(){if(CAV_COURT){await saveBlockNote(CAV_COURT.id,b.date,sl,inp.value);try{renderGrid()}catch(e){}toast("Note saved.")}};row.appendChild(lab);row.appendChild(inp);bd.appendChild(row)});
 const x=document.createElement("button");x.className="bx";x.textContent="Remove";
 x.onclick=()=>removeBlock(b.date);item.appendChild(x);wrap.appendChild(item)})}
+/* LAYAW-PRUNE-BLOCKS — a block whose date has gone cannot change anything:
+   the booking page only ever asks about today onward. Left in place they pile
+   up in the court's block list and, more expensively, ride along inside
+   courts/{id}, which every booking-page load downloads. Today is kept; the day
+   is still running. */
+function prunePastBlocks(arr){const t=dstr(today())
+;return(Array.isArray(arr)?arr:[]).filter(b=>b&&String(b.date||"")>=t)}
+function prunedPatch(patch){return patch&&Array.isArray(patch.blocks)
+?Object.assign({},patch,{blocks:prunePastBlocks(patch.blocks)}):patch}
 async function saveCourtField(patch){if(!CAV_COURT||!CAV_COURT.id)return!1;
+patch=prunedPatch(patch);
 try{await db.collection("courts").doc(CAV_COURT.id).update(patch);
 const idx=COURTS.findIndex(c=>c.id===CAV_COURT.id);
 if(idx>=0){Object.assign(COURTS[idx],patch);CAV_COURT=COURTS[idx]}
@@ -998,7 +1008,8 @@ const ok=nCourts&&nSlots&&hasDates;$("mcBlock").disabled=!ok;$("mcUnblock").disa
 function mcDates(){const s=$("mcStart").value,e=$("mcEnd").value;if(!s||!e)return[];
 const out=[],d=new Date(s+"T00:00:00"),end=new Date(e+"T00:00:00");if(end<d)return[];
 let guard=0;while(d<=end&&guard<400){out.push(d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()));d.setDate(d.getDate()+1);guard++}return out}
-async function mcSaveCourt(court,patch){try{await db.collection("courts").doc(court.id).update(patch);
+async function mcSaveCourt(court,patch){patch=prunedPatch(patch)
+;try{await db.collection("courts").doc(court.id).update(patch);
 const idx=COURTS.findIndex(c=>c.id===court.id);if(idx>=0)Object.assign(COURTS[idx],patch);return!0}
 catch(e){console.error(e);return!1}}
 async function mcSetOverall(makeUnavail){const courts=mcSelectedCourts();if(!courts.length)return;
@@ -1109,7 +1120,7 @@ if(blocked){next=cur.map(b=>b.date===selectedDate?blkDropLabels(Object.assign(b,
 else{next=cur;const ex=next.find(b=>b.date===selectedDate);
 if(ex){if(!ex.slots.includes(slotKey))ex.slots.push(slotKey);ex.slots.sort();blkSetLabels(ex,[slotKey],typedLabel,typedPopup)}
 else next.push(blkSetLabels({date:selectedDate,slots:[slotKey],labels:{},notes:{}},[slotKey],typedLabel,typedPopup))}
-try{await db.collection("courts").doc(court.id).update({blocks:next});
+try{await db.collection("courts").doc(court.id).update({blocks:prunePastBlocks(next)});
 const idx=COURTS.findIndex(c=>c.id===court.id);if(idx>=0)COURTS[idx].blocks=next;
 /* Note lives per court+date. Keep it while any slot that day is still
    blocked; drop it once the last one is opened, so no name is left

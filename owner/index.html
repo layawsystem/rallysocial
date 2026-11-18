@@ -1856,7 +1856,7 @@ const picked=new Set([...$("cavBulkSlots").querySelectorAll(".cav-slot.on")].map
 let bl=courtBlocks().map(b=>{if(!dates.has(b.date))return blkEntry(b);
 return blkDropLabels(Object.assign(blkEntry(b),{slots:(b.slots||[]).filter(sl=>!picked.has(sl))}),[...picked])}).filter(b=>(b.slots||[]).length>0);
 const ok=await saveCourtField({blocks:bl});if(ok){renderCavSlots(),renderCavBlocks();toast("Unblocked "+dates.size+" day(s).")}}
-function renderCavBlocks(){const wrap=$("cavBlockList"),bl=courtBlocks();
+function renderCavBlocks(){const wrap=$("cavBlockList"),bl=prunePastBlocks(courtBlocks());
 if(!bl.length){wrap.innerHTML='<div class="cav-empty">No blocks set.</div>';return}
 wrap.innerHTML="";bl.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(b=>{
 const item=document.createElement("div");item.className="cav-block-item";
@@ -1865,7 +1865,17 @@ item.innerHTML='<div class="bd"><strong>'+esc(niceD(b.date))+'</strong></div>';c
 const x=document.createElement("button");x.className="bx";x.textContent="Remove";
 x.onclick=()=>removeBlock(b.date);item.appendChild(x);wrap.appendChild(item)})}
 function niceD(d){const[y,m,da]=d.split("-").map(Number);return new Date(y,m-1,da).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})}
+/* LAYAW-PRUNE-BLOCKS — a block whose date has gone cannot change anything:
+   the booking page only ever asks about today onward. Left in place they pile
+   up in the court's block list and, more expensively, ride along inside
+   courts/{id}, which every booking-page load downloads. Today is kept; the day
+   is still running. */
+function prunePastBlocks(arr){const t=dstr(today())
+;return(Array.isArray(arr)?arr:[]).filter(b=>b&&String(b.date||"")>=t)}
+function prunedPatch(patch){return patch&&Array.isArray(patch.blocks)
+?Object.assign({},patch,{blocks:prunePastBlocks(patch.blocks)}):patch}
 async function saveCourtField(patch){if(!CAV_COURT||!CAV_COURT.id)return!1;
+patch=prunedPatch(patch);
 try{await db.collection("courts").doc(CAV_COURT.id).update(patch);
 const idx=COURTS.findIndex(c=>c.id===CAV_COURT.id);
 if(idx>=0){Object.assign(COURTS[idx],patch);CAV_COURT=COURTS[idx]}
@@ -1990,7 +2000,8 @@ function mcDates(){let s=dateFieldValue("mcStart"),e=dateFieldValue("mcEnd")
    software could apply for them. */
 ;if(s&&!e)e=s;if(e&&!s)s=e;if(!s||!e)return[]
 ;return daysBetween(s,e)}
-async function mcSaveCourt(court,patch){try{await db.collection("courts").doc(court.id).update(patch);
+async function mcSaveCourt(court,patch){patch=prunedPatch(patch)
+;try{await db.collection("courts").doc(court.id).update(patch);
 const idx=COURTS.findIndex(c=>c.id===court.id);if(idx>=0)Object.assign(COURTS[idx],patch);return!0}
 catch(e){console.error(e);return!1}}
 async function mcSetOverall(makeUnavail){const courts=mcSelectedCourts();if(!courts.length)return;
@@ -2044,7 +2055,7 @@ if(blocked){next=cur.map(b=>b.date===selectedDate?blkDropLabels(Object.assign(b,
 else{next=cur;const ex=next.find(b=>b.date===selectedDate);
 if(ex){if(!ex.slots.includes(slotKey))ex.slots.push(slotKey);ex.slots.sort();blkSetLabels(ex,[slotKey],typedLabel,typedPopup)}
 else next.push(blkSetLabels({date:selectedDate,slots:[slotKey],labels:{},notes:{}},[slotKey],typedLabel,typedPopup))}
-try{await db.collection("courts").doc(court.id).update({blocks:next});
+try{await db.collection("courts").doc(court.id).update({blocks:prunePastBlocks(next)});
 const idx=COURTS.findIndex(c=>c.id===court.id);if(idx>=0)COURTS[idx].blocks=next;
 /* Opening the last blocked slot of a date leaves the note attached to
    nothing — clear it so no name lingers. */
