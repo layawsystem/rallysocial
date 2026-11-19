@@ -321,7 +321,6 @@ table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
 .cav-linkbtn{background:none;border:none;color:var(--green,#242428);font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
 .cav-slot{padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:var(--elev);color:var(--text-2);font-size:12px;font-weight:700;cursor:pointer;user-select:none}
 .cav-slot.on{background:var(--green);color:#fff;border-color:var(--green)}
-.cav-slot.taken{opacity:.4;cursor:not-allowed;text-decoration:line-through}
 .cav-empty{font-size:13px;color:var(--muted)}
 .cav-blocklist{display:flex;flex-direction:column;gap:8px}
 .cav-block-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--elev)}
@@ -396,6 +395,16 @@ table.sched td.book-cell.pending .stt{color:var(--pend-tx)}
 .switch input:checked+.sl{background:var(--green)}
 .switch input:checked+.sl:before{transform:translateX(18px)}
 
+
+/* LAYAW-UNBLOCK-SLOTS — a chip now carries two things at once: whether the
+   slot is blocked, and whether you have selected it. Blocked keeps the struck
+   through look; selected adds a ring, so a blocked slot you are about to free
+   reads as both. */
+.cav-slot.taken{opacity:.5;text-decoration:line-through;cursor:pointer}
+.cav-slot.taken.on{opacity:1;background:var(--elev);color:var(--text);
+box-shadow:0 0 0 2px var(--green) inset;border-color:var(--green)}
+.cav-btn-row{display:flex;gap:10px;margin-top:10px}
+.cav-btn-row .btn{flex:1;padding:11px;margin-top:0}
 /* LAYAW-QR-UPLOAD */
 .qr-up{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
 .qr-prev{width:92px;height:92px;object-fit:contain;border-radius:10px;border:1px solid var(--line);
@@ -1330,7 +1339,7 @@ input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:po
 <label class="cav-mini" style="margin-top:8px">Time slots to block</label>
 <div class="cav-slot-actions" style="display:none"><button id="cavSelectAll" class="cav-linkbtn" type="button">Select all (whole day)</button><button id="cavClearAll" class="cav-linkbtn" type="button">Clear all</button></div>
 <div id="cavSlots" class="cav-slots"><div class="cav-empty">Pick a date first.</div></div>
-<label class="cav-mini" style="margin-top:8px">Show on booking page (optional)</label><select id="cavLabel" class="fld-input"><option value="">Nothing &mdash; looks like a normal booking</option><option>Open Play</option><option>Tournament</option><option>Private Event</option><option>Maintenance</option><option value="__other">Other&hellip;</option></select><input type="text" id="cavLabelOther" class="fld-input" maxlength="22" placeholder="Type what players should see" style="display:none;margin-top:6px"/><div class="cav-hint">Players see this instead of &ldquo;Booked&rdquo;.</div><label class="cav-mini" style="margin-top:8px">Pop-up text (optional)</label><input type="text" id="cavPopup" class="fld-input" maxlength="80" placeholder="e.g. Pay P250 at the gate"/><div class="cav-hint">Shown when a player taps the slot. Needs a label above it.</div><label class="cav-mini" style="margin-top:8px">Note &mdash; who is this for? (optional)</label><input type="text" id="cavNote" class="fld-input" placeholder="e.g. Coach Rey clinic, Ana Duque"/><div class="cav-hint">Only you and your staff can see this. Players never do.</div><button id="cavAddBlock" class="btn" style="width:100%;margin-top:10px;padding:11px" disabled>Block selected slots</button><div class="cav-hint" id="cavWhy" style="margin-top:6px"></div>
+<label class="cav-mini" style="margin-top:8px">Show on booking page (optional)</label><select id="cavLabel" class="fld-input"><option value="">Nothing &mdash; looks like a normal booking</option><option>Open Play</option><option>Tournament</option><option>Private Event</option><option>Maintenance</option><option value="__other">Other&hellip;</option></select><input type="text" id="cavLabelOther" class="fld-input" maxlength="22" placeholder="Type what players should see" style="display:none;margin-top:6px"/><div class="cav-hint">Players see this instead of &ldquo;Booked&rdquo;.</div><label class="cav-mini" style="margin-top:8px">Pop-up text (optional)</label><input type="text" id="cavPopup" class="fld-input" maxlength="80" placeholder="e.g. Pay P250 at the gate"/><div class="cav-hint">Shown when a player taps the slot. Needs a label above it.</div><label class="cav-mini" style="margin-top:8px">Note &mdash; who is this for? (optional)</label><input type="text" id="cavNote" class="fld-input" placeholder="e.g. Coach Rey clinic, Ana Duque"/><div class="cav-hint">Only you and your staff can see this. Players never do.</div><div class="cav-btn-row"><button id="cavAddBlock" class="btn">Block selected slots</button><button id="cavUnblockSlots" class="btn-ghost" style="flex:1;padding:11px">Unblock selected</button></div><div class="cav-hint" id="cavWhy" style="margin-top:6px"></div>
 </div>
 <div class="cav-section">
 <div class="cav-label">Bulk: block a date range</div>
@@ -1809,10 +1818,13 @@ if(!force&&d===CAV_SLOTS_FOR&&wrap.querySelector(".cav-slot"))return syncAddBtn(
 const blocked=new Set();courtBlocks().forEach(b=>{if(b.date===d)(b.slots||[]).forEach(sl=>blocked.add(sl))});
 wrap.innerHTML="";buildSlots().forEach(sl=>{const el=document.createElement("div");
 const isBlocked=blocked.has(sl.key);el.className="cav-slot"+(isBlocked?" taken":"");
-el.textContent=hourLabel(sl.mins);el.dataset.k=sl.key;
-if(!isBlocked)el.onclick=()=>{el.classList.toggle("on");syncAddBtn()};
+el.textContent=hourLabel(sl.mins);el.dataset.k=sl.key;el.dataset.blocked=isBlocked?"1":"";
+el.title=isBlocked?"Already blocked — select it and press Unblock selected":"";
+el.onclick=()=>{el.classList.toggle("on");syncAddBtn()};
 wrap.appendChild(el)});syncAddBtn()}
-function syncAddBtn(){const any=$("cavSlots").querySelectorAll(".cav-slot.on").length>0
+function syncAddBtn(){const sel=[...$("cavSlots").querySelectorAll(".cav-slot.on")]
+,any=sel.length>0,toFree=sel.filter(el=>el.dataset.blocked).length,toBlock=sel.length-toFree
+;const u=$("cavUnblockSlots");if(u)u.disabled=!toFree
 ;const d=dateFieldValue("cavDate");$("cavAddBlock").disabled=!1
 /* LAYAW-BLOCK-WHY — a slot already blocked is drawn struck through and cannot
    be picked, so on a day that is fully blocked there is nothing to select and
@@ -1821,10 +1833,11 @@ function syncAddBtn(){const any=$("cavSlots").querySelectorAll(".cav-slot.on").l
 ;const taken=$("cavSlots").querySelectorAll(".cav-slot.taken").length
 ,total=$("cavSlots").querySelectorAll(".cav-slot").length
 ;why.textContent=!d?"Pick a date first."
- :any?""
- :total&&taken===total?"Every slot on this date is already blocked. Remove that date in the list below first."
- :"Pick at least one time slot."}
-function cavSelectAllSlots(on){$("cavSlots").querySelectorAll(".cav-slot:not(.taken)").forEach(el=>{el.classList.toggle("on",on)});syncAddBtn()}
+ :!any?(total&&taken===total?"Every slot on this date is blocked. Select the ones you want back and press Unblock selected.":"Pick at least one time slot.")
+ :toFree&&toBlock?toBlock+" to block, "+toFree+" to unblock — use either button."
+ :toFree?"Struck-through slots are already blocked. Press Unblock selected to free them."
+ :""}
+function cavSelectAllSlots(on){$("cavSlots").querySelectorAll(".cav-slot").forEach(el=>{el.classList.toggle("on",on)});syncAddBtn()}
 function renderBulkSlots(){const wrap=$("cavBulkSlots");wrap.innerHTML="";buildSlots().forEach(sl=>{const el=document.createElement("div");
 el.className="cav-slot";el.textContent=hourLabel(sl.mins);el.dataset.k=sl.key;
 el.onclick=()=>{el.classList.toggle("on");syncBulkBtns()};wrap.appendChild(el)});syncBulkBtns()}
@@ -1850,6 +1863,20 @@ else bl.push(blkSetLabels({date:d,slots:picked.slice().sort(),labels:{},notes:{}
 const ok=await saveCourtField({blocks:bl});if(ok){const nt=$("cavBulkNote").value;
 if(nt&&nt.trim()&&CAV_COURT)for(const d of dates)for(const sl of picked)await saveBlockNote(CAV_COURT.id,d,sl,nt);
 $("cavBulkNote").value="";resetLabelPicker("cavBulkLabel","cavBulkLabelOther","cavBulkPopup");renderCavSlots(),renderCavBlocks();toast("Blocked "+dates.length+" day(s).")}}
+/* LAYAW-UNBLOCK-SLOTS — frees the selected slots on this one date. Mirrors
+   cavBulkUnblock, which does the same thing across a range. A date left with
+   no slots drops out entirely rather than lingering as an empty entry. */
+async function cavUnblockSlots(){const d=dateFieldValue("cavDate")
+;if(!d)return toast("Pick a date first.")
+;const picked=new Set([...$("cavSlots").querySelectorAll(".cav-slot.on")]
+.filter(el=>el.dataset.blocked).map(el=>el.dataset.k))
+;if(!picked.size)return toast("Select the blocked slots you want to free.")
+;const bl=courtBlocks().map(b=>b.date!==d?blkEntry(b)
+:blkDropLabels(Object.assign(blkEntry(b),{slots:(b.slots||[]).filter(sl=>!picked.has(sl))}),[...picked]))
+.filter(b=>(b.slots||[]).length>0)
+;const ok=await saveCourtField({blocks:bl})
+;if(ok){renderCavSlots(!0);renderCavBlocks();try{renderGrid()}catch(e){}
+;toast(picked.size===1?"1 slot unblocked.":picked.size+" slots unblocked.")}}
 async function cavBulkUnblock(){if(!bulkDates().length)return toast("Set the dates for the range.")
 ;if(!$("cavBulkSlots").querySelectorAll(".cav-slot.on").length)return toast("Pick at least one time slot.");const dates=new Set(bulkDates());if(!dates.size)return toast("Check your dates.");
 const picked=new Set([...$("cavBulkSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k));if(!picked.size)return;
@@ -1885,7 +1912,8 @@ const ok=await saveCourtField({status:un?"":"unavailable"});
 if(ok){renderCavStatus();toast(un?"Court marked available.":"Court marked not available.")}}
 async function cavAddBlock(){const d=dateFieldValue("cavDate")
 ;if(!d)return toast($("cavDate").value?"I can't read that date. Please tap the calendar icon and pick the date instead of typing it.":"Pick a date first.");
-const picked=[...$("cavSlots").querySelectorAll(".cav-slot.on")].map(el=>el.dataset.k)
+const picked=[...$("cavSlots").querySelectorAll(".cav-slot.on")]
+.filter(el=>!el.dataset.blocked).map(el=>el.dataset.k)
 ;if(!picked.length){const all=$("cavSlots").querySelectorAll(".cav-slot").length
 ,taken=$("cavSlots").querySelectorAll(".cav-slot.taken").length
 ;return toast(all&&taken===all?"Every slot on this date is already blocked. Remove that date in the list below first.":"Pick at least one time slot.")}
@@ -2359,6 +2387,7 @@ $("cavBulkSelectAll").onclick=()=>bulkSelectAll(!0),
 $("cavBulkClearAll").onclick=()=>bulkSelectAll(!1),
 $("cavBulkBlock").onclick=()=>cavBulkBlock(),
 $("cavBulkUnblock").onclick=()=>cavBulkUnblock(),
+$("cavUnblockSlots").onclick=()=>cavUnblockSlots(),
 $("cavBulkStart").onchange=()=>syncBulkBtns(),
 $("cavBulkEnd").onchange=()=>syncBulkBtns(),
 $("cavDate").onchange=()=>renderCavSlots(),$("cavDate").oninput=()=>renderCavSlots(),
